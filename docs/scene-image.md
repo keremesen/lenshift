@@ -1,0 +1,10 @@
+# Scene image
+
+- Asset: `public/copenhagen-scene.jpg`
+- Created with the built-in image_gen tool; not the CLI.
+- Original generation: `/Users/keremesen/.codex/generated_images/01a09f08-ca39-72f3-a8e0-9fb756fb327b/exec-2fe7a35a-17b4-435f-a800-6feb04319093.png`
+- JPEG conversion: quality 92. The scene is generated, not a documentary photograph of a specific cafe.
+
+## Generation prompt
+
+Create one beautiful, strictly photorealistic photograph used as the full-screen scene of an interactive vision simulator. Landscape 16:9, high detail ideally 2560px wide or higher. View from a sidewalk cafe in a charming Copenhagen neighborhood looking along a lived-in street, natural early evening in late summer, gentle soft sunlight, restrained natural colors. Eye-level camera at a seated cafe table. Bottom right corner features a real wooden cafe table edge with a glass of water, white ceramic espresso cup and a small cream printed cafe menu reading 'COFFEE' with a few tiny menu items. These nearby details occupy only bottom right 15% of image. Rich spatial depth: foreground crisp table and bicycle at left edge; mid-distance leafy trees, bicycles and beautiful varied terracotta brick and cream facades with small authentic shop signs; far distance street recedes to central vanishing point. Warm practical cafe lights visible in windows, street lamps on, but not glowing excessively. Very few small incidental people in the mid distance, no close faces. The scene is the subject, not negative space for advertising. Natural believable photographic composition slightly asymmetrical, architectural perspective correct, exquisite texture, inviting quiet scene. Wide 28mm lens, deep focus f/11 with all distances sharp, no blur, no bokeh. No obvious landmark, no postcard symmetry, no ornate Paris buildings, no dramatic clouds, no rain, no wet reflective street, no orange/teal grade, no HDR, no fake bloom, no fantasy, no CGI or illustration. No website or UI, no overlays, no typography except physically printed small cafe signs and menu.

@@ -1,6 +1,6 @@
 # Lenshift
 
-A single-page visual experiment in seeing through different prescriptions, built with Next.js, React, and a custom WebGL optical shader.
+A full-screen vision simulator that opens directly on the interactive scene, built with Next.js, React, and a custom WebGL optical shader. Compact controls float over the scene; background information is available in an optional dialog.
 
 ## Development
 
@@ -20,6 +20,6 @@ Open http://localhost:3000. `npm run build` creates a static export in `out/`; `
 - Pointer- and keyboard-held 20/20 comparison, evening/night lighting, and reduced-motion support.
 - URL-preserved sphere, cylinder, axis, mode, and lighting; native sharing with clipboard and manual-copy fallbacks.
 
-The scene is an original generated image. A nearby readable cafe card is composited into the optical texture. The optical depth map is an artistic spatial approximation, not measured scene geometry. Sphere and cylinder effects do not model individual accommodation or retinal optics and are not diagnostic.
+The scene is an original generated Copenhagen cafe photograph, with an in-scene printed menu for near-vision detail. The optical depth map is an artistic spatial approximation, not measured scene geometry. Sphere and cylinder effects do not model individual accommodation or retinal optics and are not diagnostic.
 
 WebGL is required for optical effects. If unavailable, the original image remains visible with a compatibility notice. No account, database, or external image service is required.

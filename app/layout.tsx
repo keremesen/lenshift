@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lenshift — A different way to see",
+  title: "Lenshift — Vision simulator",
   description: "Experience the world through different prescriptions. An interactive visual experiment in myopia, hyperopia, and astigmatism.",
 };
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export type VisionSettings = { sph: number; cyl: number; axis: number; glasses: boolean; compare: boolean; night: boolean; intro: boolean };
+export type VisionSettings = { sph: number; cyl: number; axis: number; glasses: boolean; compare: boolean; night: boolean };
 const vertex = `attribute vec2 position; varying vec2 uv; void main(){uv=position*.5+.5;gl_Position=vec4(position,0.,1.);}`;
 const fragment = `precision highp float;
 varying vec2 uv;
@@ -82,7 +82,7 @@ export default function VisionScene({ settings }: { settings: VisionSettings }) 
     const position=gl.getAttribLocation(program,"position");gl.enableVertexAttribArray(position);gl.vertexAttribPointer(position,2,gl.FLOAT,false,0,0);
     const uniforms=Object.fromEntries(["resolution","pointer","lensPosition","sph","cyl","axis","glasses","correction","night","scene"].map(n=>[n,gl.getUniformLocation(program,n)]));
     const texture=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,texture);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-    const photo=new Image();photo.src="/paris-scene.jpg";
+    const photo=new Image();photo.src="/copenhagen-scene.jpg";
     let width=1,height=1;
     const drawTexture=()=>{
       if(!ready||stopped)return;
@@ -90,21 +90,19 @@ export default function VisionScene({ settings }: { settings: VisionSettings }) 
       const ratio=Math.min(window.devicePixelRatio,1.35);canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);gl.viewport(0,0,canvas.width,canvas.height);
       const composite=document.createElement("canvas");composite.width=Math.round(width*1.5);composite.height=Math.round(height*1.5);const ctx=composite.getContext("2d")!;
       ctx.scale(1.5,1.5);const cover=Math.max(width/photo.width,height/photo.height);ctx.drawImage(photo,(width-photo.width*cover)/2,(height-photo.height*cover)/2,photo.width*cover,photo.height*cover);
-      // A close, readable cafe menu shares the optical texture, including correction through lenses.
-      {ctx.save();ctx.translate(width*(width>650?.84:.80),height*.79);if(width<=650)ctx.scale(.73,.73);ctx.rotate(-.075);ctx.shadowColor="#0005";ctx.shadowBlur=18;ctx.fillStyle="#ede8d9";ctx.fillRect(-80,-58,160,112);ctx.shadowBlur=0;ctx.textAlign="center";ctx.fillStyle="#313c35";ctx.font="10px Georgia";ctx.fillText("LE PETIT CAFÉ",0,-32);ctx.fillRect(-57,-20,114,.5);ctx.font="italic 21px Georgia";ctx.fillText("La vie est belle.",0,7);ctx.font="9px Arial";ctx.fillText("UN CAFÉ. UN INSTANT.",0,30);ctx.restore();}
       gl.bindTexture(gl.TEXTURE_2D,texture);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGB,gl.RGB,gl.UNSIGNED_BYTE,composite);
     };
     photo.onload=()=>{ready=true;drawTexture();canvas.style.opacity="1";};photo.onerror=()=>setFailed(true);
     const observer=new ResizeObserver(drawTexture);observer.observe(canvas);
-    const target={x:.5,y:.46,px:0,py:0};
+    const target={x:.5,y:.52,px:0,py:0};
     const move=(event:PointerEvent)=>{const rect=canvas.getBoundingClientRect();if(event.clientY<rect.top||event.clientY>rect.bottom)return;target.x=(event.clientX-rect.left)/rect.width;target.y=1-(event.clientY-rect.top)/rect.height;target.px=(target.x-.5)*2;target.py=(target.y-.5)*2;};
     window.addEventListener("pointermove",move,{passive:true});
-    const current={sph:0,cyl:0,axis:90,glasses:0,correction:0,night:0,x:.5,y:.46,px:0,py:0};
+    const current={sph:0,cyl:0,axis:90,glasses:0,correction:0,night:0,x:.5,y:.52,px:0,py:0};
     const velocity:Record<string,number>={};let last=0;
     const tick=(time:number)=>{
       if(stopped)return;frame=requestAnimationFrame(tick);if(!ready||document.hidden)return;
       const dt=Math.min((time-last)/1000||.016,.033);last=time;const s=settingsRef.current;
-      const goals={sph:s.intro?0:s.sph,cyl:s.intro?0:s.cyl,axis:s.axis,glasses:s.glasses?1:0,correction:s.compare?1:0,night:s.night?1:0,x:target.x,y:target.y,px:reduced.matches?0:target.px,py:reduced.matches?0:target.py};
+      const goals={sph:s.sph,cyl:s.cyl,axis:s.axis,glasses:s.glasses?1:0,correction:s.compare?1:0,night:s.night?1:0,x:target.x,y:target.y,px:reduced.matches?0:target.px,py:reduced.matches?0:target.py};
       for(const key of Object.keys(current) as (keyof typeof current)[]){if(reduced.matches){current[key]=goals[key];continue;}velocity[key]=(velocity[key]||0)+(goals[key]-current[key])*180*dt;velocity[key]*=Math.exp(-23*dt);current[key]+=velocity[key]*dt;}
       gl.uniform2f(uniforms.resolution,width,height);gl.uniform2f(uniforms.pointer,current.px,current.py);gl.uniform2f(uniforms.lensPosition,current.x*width,current.y*height);
       gl.uniform1f(uniforms.sph,current.sph);gl.uniform1f(uniforms.cyl,current.cyl);gl.uniform1f(uniforms.axis,current.axis*Math.PI/180);gl.uniform1f(uniforms.glasses,current.glasses);gl.uniform1f(uniforms.correction,current.correction);gl.uniform1f(uniforms.night,current.night);gl.drawArrays(gl.TRIANGLES,0,6);
@@ -114,5 +112,5 @@ export default function VisionScene({ settings }: { settings: VisionSettings }) 
     return()=>{stopped=true;cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener("pointermove",move);canvas.removeEventListener("webglcontextlost",contextLost);gl.deleteTexture(texture);gl.deleteBuffer(buffer);gl.deleteProgram(program);};
   },[]);
 
-  return <><div className="scene-fallback" /><canvas ref={canvasRef} className="vision-canvas" aria-label="An evening on a Parisian street, with focus changing according to your selected prescription" role="img" />{failed&&<p className="graphics-note">Your browser couldn’t start the optical effects. Try a browser with WebGL enabled.</p>}</>;
+  return <><div className="scene-fallback" /><canvas ref={canvasRef} className="vision-canvas" aria-label="A cafe terrace overlooking a Copenhagen street, with focus changing according to your selected prescription" role="img" />{failed&&<p className="graphics-note">Your browser couldn’t start the optical effects. Try a browser with WebGL enabled.</p>}</>;
 }
