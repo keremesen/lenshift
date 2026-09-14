@@ -1,36 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lenshift
 
-## Getting Started
+A single-page visual experiment in seeing through different prescriptions, built with Next.js, React, and a custom WebGL optical shader.
 
-First, run the development server:
+## Development
 
-```bash
+```sh
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. `npm run build` creates a static export in `out/`; `npm run lint` checks the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Experience
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Sphere from +6.00 to −10.00 D, with continuous spring interpolation.
+- Three smoothly joined spatial depth regions that respond differently to myopia and hyperopia.
+- Cylinder from 0.00 to −4.00 D with directional sampling and a rotating 0–180° axis.
+- Movable glasses rendered in the shader, with sharp image sampling strictly inside each lens.
+- Pointer- and keyboard-held 20/20 comparison, evening/night lighting, and reduced-motion support.
+- URL-preserved sphere, cylinder, axis, mode, and lighting; native sharing with clipboard and manual-copy fallbacks.
 
-## Learn More
+The scene is an original generated image. A nearby readable cafe card is composited into the optical texture. The optical depth map is an artistic spatial approximation, not measured scene geometry. Sphere and cylinder effects do not model individual accommodation or retinal optics and are not diagnostic.
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+WebGL is required for optical effects. If unavailable, the original image remains visible with a compatibility notice. No account, database, or external image service is required.
