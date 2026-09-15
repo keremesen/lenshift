@@ -1,0 +1,261 @@
+/* A camera-like instrument: the ring, readout and scene share one gesture. */
+.scene-touch{position:absolute;inset:0;z-index:0;touch-action:none;cursor:crosshair}
+.intro-active .scene-touch{pointer-events:none}
+.scene-invitation{position:absolute;left:50%;top:27%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;pointer-events:none;transition:opacity .7s .5s,translate .9s .4s;white-space:nowrap;text-shadow:0 2px 24px #081208}
+.scene-invitation>span:nth-child(2){font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:clamp(22px,2.4vw,36px);letter-spacing:-.6px;color:#fcf9ee}
+.scene-invitation small{font:8px var(--font-geist-mono),monospace;letter-spacing:1.3px;color:#f4f7e8c7}
+.scene-crosshair{width:38px;height:38px;border:1px solid #f0f5d54a;border-radius:50%;position:relative;margin-bottom:2px;transition:transform 1s,border-color .6s;box-shadow:0 0 36px #09130924}
+.scene-crosshair i{position:absolute;background:#eff8d0a3;left:calc(50% - 4px);top:calc(50% - .5px);width:8px;height:1px}
+.scene-crosshair i+i{transform:rotate(90deg)}
+.revealing-clarity .scene-crosshair{transform:rotate(180deg) scale(1.3);border-color:#e5ffc6}
+.intro-active .scene-invitation{opacity:0;translate:0 15px;transition-delay:0s}
+.adjusting-focus .scene-invitation{opacity:0;transition-delay:0s}
+.focus-feedback{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:16px;padding:11px 18px;background:#15231bb8;border:1px solid #d8eccb24;border-radius:40px;backdrop-filter:blur(12px);font:10px var(--font-geist-mono),monospace;letter-spacing:1.5px;pointer-events:none;opacity:0;transition:opacity .3s,translate .5s;translate:0 8px;color:#e4f6c9}
+.focus-feedback i{width:28px;height:1px;background:#deedb78c;position:relative}
+.focus-feedback i::after{content:"";position:absolute;left:0;top:-2px;width:5px;height:5px;border-radius:50%;background:#e6fac9;animation:focus-scan 1.2s ease-in-out infinite alternate}
+.adjusting-focus .focus-feedback{opacity:1;translate:0 0}
+.clarity-status{position:absolute;right:4%;top:113px;pointer-events:none;font:9px var(--font-geist-mono),monospace;color:#eef6dd;letter-spacing:.3px;text-shadow:0 1px 12px #0009}
+.intro-active .clarity-status{visibility:hidden}
+.focus-lab{position:absolute;z-index:3;left:50%;bottom:max(22px,env(safe-area-inset-bottom));width:min(1080px,calc(100% - 64px));transform:translateX(-50%);padding:0 26px;color:#edf1e1;border:1px solid #d9edc92e;border-radius:24px;background:linear-gradient(120deg,#14221ced,#1c2a21f5 45%,#111f18f5);box-shadow:0 28px 100px #03100860,inset 0 1px 0 #ecffd70a;backdrop-filter:blur(32px);transition:opacity .7s .4s,translate 1.2s cubic-bezier(.16,1,.3,1) .2s,visibility 0s}
+.focus-lab::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(ellipse at 53% 20%,#d7f6a509,transparent 58%);transition:opacity .5s;opacity:.4}
+.adjusting-focus .focus-lab::before{opacity:1}
+.intro-active .focus-lab{opacity:0;translate:0 100px;visibility:hidden;pointer-events:none;transition-delay:0s}
+.lab-topline{height:59px;display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #d9edc916}
+.focus-lab .mode-tabs{display:grid;grid-template-columns:repeat(3,1fr);position:relative;padding:3px;gap:0;border:1px solid #edf4dd0b;border-radius:24px;background:#09171047}
+.focus-lab .mode-tabs button{display:flex;align-items:center;justify-content:center;gap:9px;padding:7px 14px;color:#a4b39d;font-size:11px;white-space:nowrap;border-radius:22px;background:transparent;transition:color .3s;translate:none}
+.focus-lab .mode-tabs button.active{color:#e5f5c7;background:transparent}
+.focus-lab .mode-tabs button:hover{color:#f1f8df;background:transparent;translate:none}
+.mode-indicator{position:absolute;left:3px;top:3px;bottom:3px;width:calc((100% - 6px)/3);border-radius:20px;background:#d4eeb312;box-shadow:inset 0 0 0 1px #dbf3b621;transform:translateX(calc(var(--mode-index)*100%));transition:transform .65s cubic-bezier(.22,1,.36,1)}
+.mode-number{font:8px var(--font-geist-mono),monospace;opacity:.55}
+.lab-tools{display:flex;align-items:center;gap:22px}
+.lab-edition{font:8px var(--font-geist-mono),monospace;letter-spacing:1.6px;color:#b3c6a777}
+.focus-lab .reset-button{font-size:10px;min-height:36px;gap:7px;color:#c7d3bd}
+.lab-workspace{display:grid;grid-template-columns:minmax(180px,1fr) 310px minmax(180px,1fr);gap:32px;align-items:center;min-height:274px;padding:5px 16px 7px}
+.perception-story{align-self:center;padding:5px 0 0;animation:story-in .65s both}
+.lab-kicker{font:8px var(--font-geist-mono),monospace;letter-spacing:1.5px;color:#a7bc91;display:block;margin-bottom:14px}
+.perception-story h2{margin:0;font-weight:400;font-size:29px;line-height:1.1;letter-spacing:-1.05px;color:#f0f1e6}
+.perception-story h2 span{display:block;animation:story-line .7s cubic-bezier(.16,1,.3,1) both;animation-delay:calc(var(--line-index)*60ms)}
+.perception-story h2 span:last-child{font-family:Georgia,'Times New Roman',serif;font-style:italic;color:#deefc1;font-size:1.07em}
+.perception-story p{font-size:10px;line-height:1.8;color:#b0bea5;max-width:225px;margin:13px 0 19px}
+.perception-stops{display:grid;grid-template-columns:1fr 1fr;gap:5px 7px}
+.perception-stops button{display:flex;align-items:center;gap:7px;font-size:9px;color:#a2b294;padding:6px 1px;min-height:28px;text-align:left;transition:color .25s}
+.perception-stops button:hover,.perception-stops button.selected{color:#ecf6d8}
+.stop-dot{position:relative;width:7px;height:7px;border:1px solid #a5be8369;border-radius:50%;transition:background .3s,box-shadow .3s,transform .4s;flex-shrink:0}
+.perception-stops button:hover .stop-dot{transform:scale(1.3)}
+.perception-stops button.selected .stop-dot{background:#e2f4b8;border-color:#e2f4b8;box-shadow:0 0 0 3px #d5f69912,0 0 12px #d5f69924}
+.optical-dial{position:relative;display:flex;flex-direction:column;align-items:center;justify-self:center;width:258px;user-select:none;-webkit-user-select:none}
+.dial-surface{position:relative;width:100%;aspect-ratio:1;flex-shrink:0;border-radius:50%;touch-action:none;cursor:grab;isolation:isolate;outline-offset:1px!important}
+.dial-surface:active,.is-turning .dial-surface{cursor:grabbing}
+.dial-halo{position:absolute;inset:4%;border-radius:50%;box-shadow:0 0 0 1px #d4eabd05,0 0 0 10px #d4eabd03,0 0 0 22px #d4eabd02;transition:box-shadow .5s,scale .5s;pointer-events:none}
+.is-turning .dial-halo{scale:1.015;box-shadow:0 0 0 1px #d4eabd18,0 0 0 11px #d4eabd07,0 0 0 25px #d4eabd03,0 0 60px #c8ef9c0d}
+.dial-machining{position:absolute;inset:15%;border-radius:50%;background:repeating-conic-gradient(from var(--dial-angle),#c9eab516 0deg .5deg,transparent .5deg 3deg);mask:radial-gradient(circle,transparent 65%,black 66% 70%,transparent 71%);transition:rotate .5s;pointer-events:none}
+.dial-surface::before{content:"";position:absolute;inset:17%;border-radius:50%;background:radial-gradient(ellipse at 30% 20%,#bddd970d,transparent 65%),linear-gradient(140deg,#1e3023,#122218);border:1px solid #d1e8b91c;box-shadow:8px 12px 22px #0612096b,inset 0 1px 2px #e9fbc91a,inset 0 -1px 2px #0209045c;transition:box-shadow .4s,scale .45s}
+.is-turning .dial-surface::before{scale:.975;box-shadow:4px 6px 12px #0612096b,inset 0 1px 3px #e9fbc924}
+.dial-scale{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.dial-scale line{stroke:#728569;stroke-width:1;transition:stroke .18s}
+.dial-scale line.major{stroke:#bbcda4;stroke-width:1.3}
+.dial-scale line.passed{stroke:#dcf6ab}
+.dial-inner-border{stroke:#d2ecae19;stroke-width:.65}
+.dial-scale text{fill:#a4b78e;font:9px var(--font-geist-mono),monospace;text-anchor:middle;letter-spacing:.3px}
+.dial-position{fill:#ecffd1}
+.dial-position-glow{fill:#c6f48c2b;stroke:#d7f7b455;stroke-width:4;filter:drop-shadow(0 0 5px #d9fba3)}
+.dial-face{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:13px;pointer-events:none}
+.dial-caption{font:7px var(--font-geist-mono),monospace;letter-spacing:2px;color:#a7bd90}
+.dial-reading{display:flex;align-items:center;justify-content:center;gap:4px;color:#eff7dc;font-size:45px;font-weight:350;letter-spacing:-2px;line-height:1.08;font-variant-numeric:tabular-nums;transition:color .3s,text-shadow .3s}
+.is-turning .dial-reading{color:#e8ffc4;text-shadow:0 0 25px #d3fa9533}
+.rolling-number{display:inline-flex;align-items:center;height:1.08em}
+.number-window{display:inline-block;height:1.08em;width:.61em;overflow:hidden}
+.number-reel{display:flex;flex-direction:column;transition:transform .38s cubic-bezier(.2,.8,.2,1);will-change:transform}
+.number-reel>span{display:block;height:1.08em;line-height:1.08em;flex-shrink:0}
+.number-symbol{display:inline-block;min-width:.48em;line-height:1.08em}
+.number-symbol.decimal{min-width:.21em}
+.dial-unit{align-self:flex-end;font:10px var(--font-geist-mono),monospace;color:#aec794;margin:0 0 6px 2px;letter-spacing:0}
+.dial-subtitle{font:5.5px var(--font-geist-mono),monospace;letter-spacing:.8px;color:#abc49196}
+.dial-precision{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:-13px;position:relative;z-index:1}
+.dial-precision>button{display:grid;place-items:center;width:31px;height:31px;border:1px solid #daefc121;border-radius:50%;color:#d6eac1;font-size:17px;transition:background .25s,scale .25s,border-color .25s}
+.dial-precision>button:hover{background:#d8efb612;border-color:#daefc15e}
+.dial-precision>button:active{scale:.91}
+.dial-precision>button:disabled{opacity:.25;cursor:default}
+.dial-precision>button.exact-value{display:flex;gap:3px;font:9px var(--font-geist-mono),monospace;width:auto;border:0;border-radius:5px;padding:0 6px;color:#c3d6ab}
+.exact-value>span{color:#8da57a}.exact-value svg{margin-left:4px;opacity:.6}
+.exact-entry{position:absolute;left:50%;bottom:38px;transform:translateX(-50%);z-index:5;width:214px;padding:13px;border:1px solid #d6efaf50;border-radius:12px;background:#192c1f;box-shadow:0 8px 35px #0008;animation:status-in .2s ease-out}
+.exact-entry label{display:block;font-size:10px;color:#c2d3b1;margin-bottom:9px}
+.exact-entry>div{display:flex;gap:5px}
+.exact-entry input{min-width:0;width:100%;padding:8px;color:#edf8dc;background:#101e15;border:1px solid #d6efaf30;border-radius:6px;font:13px var(--font-geist-mono),monospace}
+.exact-entry button{padding:5px 9px;border-radius:6px;background:#ddecbd;color:#23331e;font-size:11px}
+.exact-entry button:last-child{background:transparent;color:#dae8c5;font-size:17px;padding:5px}
+.correction-station{width:100%;max-width:220px;justify-self:end;display:flex;flex-direction:column;align-items:center;gap:15px}
+.correction-art{position:relative;width:100%;padding:7px 7px 16px;color:#dcf0bc;display:flex;flex-direction:column;align-items:center;gap:15px}
+.correction-art svg{width:180px;height:90px;overflow:visible;position:relative}
+.correction-art svg ellipse{stroke:#ddf4b979;stroke-width:1;transition:rx .8s,stroke .4s}
+.correction-art.is-corrected svg ellipse{rx:5px;stroke:#e7ffc5}
+.optical-ray{stroke:#c5dc9b4d;stroke-width:.8;stroke-dasharray:3 4;animation:light-travel 4s linear infinite}
+.is-corrected .optical-ray{stroke:#ddffb39c}
+.optical-target{stroke:#b4cf904a;stroke-width:.8}
+.correction-art>span{font:6px var(--font-geist-mono),monospace;letter-spacing:.7px;color:#9eb787}
+.correction-orbit{position:absolute;width:105px;height:105px;top:0;border:1px solid #d5ecb213;border-radius:50%;transform:rotate(-30deg) scaleX(1.45);transition:transform 1.2s}
+.is-corrected .correction-orbit{transform:rotate(30deg) scaleX(1.45)}
+.focus-lab .vision-actions{width:100%;gap:7px}
+.focus-lab .glasses-button{position:relative;height:42px;min-width:0;border-radius:30px;font-size:11px;padding:0 15px;gap:10px;background:#dcecb9;color:#22321c}
+.focus-lab .glasses-button svg{width:19px;height:19px}
+.action-indicator{width:5px;height:5px;border:1px solid currentColor;border-radius:50%;margin-left:auto;opacity:.5}
+.focus-lab .glasses-button.selected{background:#dcedb913;color:#e0f3be;box-shadow:inset 0 0 0 1px #d8efb24a}
+.glasses-button.selected .action-indicator{background:#e3ffc0;box-shadow:0 0 8px #e3ffc077;opacity:1}
+.focus-lab .compare-button{position:relative;height:36px;border:1px solid #dcedc014;border-radius:30px;font-size:10px;overflow:hidden;color:#b4c5a4;gap:9px}
+.compare-button>svg,.compare-button>span:not(.hold-progress){position:relative;z-index:1}
+.hold-progress{position:absolute;inset:0;background:#d9edb519;transform:scaleX(0);transform-origin:left;transition:transform .4s ease-out}
+.compare-button.held .hold-progress{transform:scaleX(1);transition:transform .8s cubic-bezier(.16,1,.3,1)}
+.axis-dial{width:162px;margin-top:-3px}
+.axis-dial .dial-surface::before{inset:26%;background:radial-gradient(circle,#17281feb 60%,#122218);border-color:#d1e8b911;box-shadow:none}
+.axis-dial .dial-halo{box-shadow:0 0 0 1px #d4eabd05,0 0 0 7px #d4eabd02}
+.axis-dial .dial-machining{display:none}
+.axis-dial .dial-face{gap:7px}
+.axis-dial .dial-caption{font-size:5px;letter-spacing:1.1px}
+.axis-dial .dial-reading{font-size:25px;letter-spacing:-1px;padding:1px 5px;background:#16271df0;border-radius:4px}
+.axis-dial .dial-subtitle{font-size:4.5px;letter-spacing:.4px}
+.axis-dial .dial-unit{font-size:12px;margin-bottom:7px;margin-left:0}
+.axis-needle{transform-origin:140px 140px;transition:transform .4s cubic-bezier(.2,.8,.2,1)}
+.axis-needle path{stroke:#e1f4bca8;stroke-width:1.5}.axis-needle ellipse{stroke:#d9f1b833;stroke-width:.8}
+.axis-dial .dial-precision{margin-top:-5px;gap:5px}
+.axis-dial .dial-precision>button{width:27px;height:27px;font-size:14px}
+.axis-dial .dial-precision>button.exact-value{width:auto;font-size:8px}
+.has-axis .correction-station{gap:8px}
+.has-axis .vision-actions{gap:4px}
+.has-axis .glasses-button{height:34px}.has-axis .compare-button{height:28px}
+.lab-footer{height:35px;border-top:1px solid #d9edc916;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#9bb08a;font-size:9px}
+.lab-footer>span:first-child{display:flex;align-items:center;gap:8px}
+.gesture-symbol{font-size:17px;color:#d3e9b5;display:inline-block;transition:rotate .6s}
+.adjusting-focus .gesture-symbol{rotate:90deg}
+.precision-hint{display:flex;align-items:center;gap:5px;color:#a3b69380;font:8px var(--font-geist-mono),monospace}
+.precision-hint kbd{border:1px solid #b1c29c22;border-radius:3px;padding:2px 4px;font:inherit}
+.lab-footer>button{display:flex;align-items:center;gap:6px;color:#a3b693;font-size:9px;padding:5px 0}
+.lab-footer>button svg{height:12px;width:12px}
+@keyframes focus-scan{to{left:23px}}
+@keyframes light-travel{to{stroke-dashoffset:-28}}
+@keyframes story-in{from{opacity:0}to{opacity:1}}
+@keyframes story-line{from{opacity:0;translate:0 8px;filter:blur(3px)}to{opacity:1;translate:0 0;filter:blur(0)}}
+@media(min-width:1500px) and (min-height:900px){.focus-lab{width:1140px;bottom:36px;padding:0 30px}.lab-workspace{min-height:305px;gap:45px}.optical-dial{width:280px}.axis-dial{width:174px}.perception-story h2{font-size:33px}.perception-story p{font-size:12px}.perception-stops button{font-size:10px}.correction-station{max-width:240px}.lab-topline{height:63px}.lab-footer{height:39px}}
+@media(max-width:1000px){.focus-lab{width:calc(100% - 40px);padding:0 20px}.lab-workspace{grid-template-columns:minmax(155px,1fr) 245px minmax(155px,1fr);gap:20px;padding:7px 0}.optical-dial{width:240px}.axis-dial{width:148px}.lab-edition{display:none}.perception-story h2{font-size:25px}.correction-art svg{width:155px}.perception-story p{font-size:10px;max-width:190px}.dial-reading{font-size:42px}.precision-hint{display:none}.scene-invitation{top:28%}}
+@media(max-height:760px) and (min-width:701px){.focus-lab{bottom:16px}.lab-topline{height:49px}.lab-workspace{min-height:230px;grid-template-columns:minmax(150px,1fr) 260px minmax(150px,1fr);gap:25px;padding:2px 5px}.optical-dial{width:223px}.axis-dial{width:135px}.dial-reading{font-size:39px}.axis-dial .dial-reading{font-size:23px}.dial-face{gap:11px}.lab-footer{height:31px}.perception-story h2{font-size:26px}.perception-story p{margin:10px 0 10px}.lab-kicker{margin-bottom:9px}.perception-stops button{min-height:25px;padding:4px 1px}.correction-art{padding-bottom:4px;gap:8px}.correction-art svg{height:75px}.correction-orbit{width:85px;height:85px}.correction-station{gap:10px}.has-axis .glasses-button{height:31px}.has-axis .compare-button{height:26px}.axis-dial .dial-precision>button{width:25px;height:25px}.scene-invitation{top:29%}}
+@media(max-width:700px){
+ .experience.simulator-active{min-height:700px}
+ .focus-lab{bottom:max(12px,env(safe-area-inset-bottom));width:calc(100% - 24px);padding:0 16px;border-radius:20px}
+ .lab-topline{height:52px;gap:5px}.lab-tools{gap:0}.focus-lab .mode-tabs{flex:1;max-width:365px}.focus-lab .mode-tabs button{font-size:10px;padding:6px 8px;gap:5px}.mode-number{font-size:7px}.focus-lab .reset-button{width:32px;padding:5px;justify-content:center}.reset-button>span{display:none}
+ .lab-workspace{grid-template-columns:1fr 1fr;gap:0 14px;min-height:0;padding:16px 0 12px;align-items:center}
+ .perception-story{grid-column:1/-1;display:grid;grid-template-columns:1fr auto;gap:0 12px;align-items:center;padding:0;margin-bottom:10px}
+ .lab-kicker{grid-column:1;font-size:7px;letter-spacing:1px;margin-bottom:7px}.perception-story h2{grid-column:1;font-size:22px;line-height:1.13}.perception-story p{display:none}.perception-stops{grid-column:2;grid-row:1/3;gap:3px 12px;min-width:154px}.perception-stops button{font-size:8px;min-height:27px;padding:5px 0;gap:5px}.stop-dot{width:6px;height:6px}
+ .optical-dial{width:min(100%,222px)}.dial-reading{font-size:37px}.dial-caption{font-size:6px;letter-spacing:1.5px}.dial-subtitle{font-size:4.4px;letter-spacing:.6px}.dial-face{gap:10px}.dial-precision{margin-top:-8px;gap:5px}.dial-precision>button{width:32px;height:32px}.dial-precision>button.exact-value{font-size:8px;padding:0 3px}.exact-value svg{width:8px;margin-left:2px}.exact-value>span{display:none}
+ .correction-station{max-width:200px;justify-self:center;gap:12px}.correction-art{padding:0;gap:11px}.correction-art svg{width:140px;height:72px}.correction-orbit{width:75px;height:75px}.correction-art>span{font-size:5px;letter-spacing:.3px}.focus-lab .glasses-button{height:38px;font-size:9px;gap:7px;padding:0 10px}.focus-lab .glasses-button svg{width:16px}.focus-lab .compare-button{height:33px;font-size:8px;gap:6px}.compare-button svg{width:15px}.action-indicator{width:4px;height:4px}
+ .axis-dial{width:125px;margin-top:0}.axis-dial .dial-reading{font-size:23px}.axis-dial .dial-caption{font-size:5px}.axis-dial .dial-subtitle{display:none}.axis-dial .dial-precision{gap:3px;margin-top:-4px}.axis-dial .dial-precision>button{width:28px;height:28px}.axis-dial .dial-precision>button.exact-value{font-size:8px}.has-axis .correction-station{gap:8px}.has-axis .vision-actions{gap:4px}.has-axis .glasses-button{height:31px}.has-axis .compare-button{height:27px}
+ .lab-footer{height:34px;font-size:8px;gap:8px}.lab-footer>button{font-size:7px;gap:4px}.lab-footer>button svg{width:10px}.gesture-symbol{font-size:15px}.lab-footer>span:first-child{gap:5px}
+ .scene-invitation{top:25%;gap:10px}.scene-invitation>span:nth-child(2){font-size:24px}.scene-invitation small{font-size:6px;letter-spacing:.85px}.scene-crosshair{width:30px;height:30px;margin:0}.scene-caption{top:85px;left:20px;font-size:7px;gap:7px;letter-spacing:.5px}.scene-caption>span:last-child{margin-left:4px}.clarity-status{top:108px;left:20px;right:auto;font-size:7px}.focus-feedback{top:25%;font-size:8px;gap:10px;padding:10px 15px}
+}
+@media(max-width:380px){.focus-lab{padding:0 12px}.lab-workspace{gap:0 8px}.mode-number{display:none}.perception-story h2{font-size:20px}.perception-stops{min-width:141px;gap:3px 9px}.perception-stops button{font-size:7.5px}.dial-reading{font-size:32px}.dial-caption{font-size:5px}.dial-subtitle{font-size:3.6px}.dial-face{gap:8px}.correction-art svg{width:119px}.correction-art>span{font-size:4.5px}.focus-lab .glasses-button{font-size:8px;padding:0 8px;gap:4px}.focus-lab .compare-button{font-size:7.5px}.lab-footer{font-size:7px}.lab-footer>button{font-size:6.5px}.axis-dial{width:119px}}
+@media(max-height:580px) and (min-width:701px){.experience.simulator-active{min-height:520px}.scene-invitation{top:27%;gap:5px}.scene-invitation>span:nth-child(2){font-size:21px}.scene-crosshair{display:none}.scene-invitation small{font-size:6px}.scene-caption{top:80px}.clarity-status{top:80px}.focus-lab{bottom:12px}.lab-topline{height:42px}.lab-workspace{min-height:211px}.optical-dial{width:200px}.axis-dial{width:116px}.dial-reading{font-size:36px}.axis-dial .dial-reading{font-size:20px}.dial-caption{font-size:6px}.dial-subtitle{font-size:4.5px}.dial-face{gap:9px}.perception-story h2{font-size:23px}.perception-story p{font-size:9px}.lab-footer{height:28px}}
+@media(prefers-reduced-motion:reduce){.focus-lab,.scene-invitation,.focus-feedback,.number-reel,.axis-needle,.dial-surface::before,.dial-halo{transition:none}.perception-story,.perception-story h2 span,.focus-feedback i::after,.optical-ray{animation:none}.number-reel{will-change:auto}.focus-lab .glasses-button:hover{transform:none}}
+
+/* Liquid optics — translucent controls behave like lenses, not panels. */
+.focus-lab{
+  --glass-edge:#f4ffe03d;
+  --glass-ink:#f8fff0;
+  --glass-muted:#dce9d2b8;
+  overflow:visible;
+  border-color:var(--glass-edge);
+  background:
+    linear-gradient(135deg,#f5ffe51a 0%,#bed7ca0d 38%,#14201a70 58%,#e9ffd817 100%),
+    #101c17a3;
+  box-shadow:0 30px 90px #020a075c,0 8px 28px #06110b32,inset 0 1px 0 #fff8,inset 0 -1px 0 #07100a66;
+  -webkit-backdrop-filter:blur(42px) saturate(180%) contrast(108%);
+  backdrop-filter:blur(42px) saturate(180%) contrast(108%);
+}
+.focus-lab::before{
+  inset:1px;
+  background:
+    radial-gradient(ellipse at 50% -20%,#f2ffdf30,transparent 48%),
+    radial-gradient(circle at 9% 20%,#b8d9ff12,transparent 25%),
+    radial-gradient(circle at 88% 84%,#e8bdff0c,transparent 30%);
+  opacity:1;
+}
+.focus-lab::after{
+  content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;
+  border:1px solid transparent;
+  background:linear-gradient(112deg,#fff9,#d8ffe51f 28%,#9ec8ff29 61%,#f4d4ff3d 78%,#fff6) border-box;
+  -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;mask-composite:exclude;
+  opacity:.72;
+}
+.adjusting-focus .focus-lab{
+  box-shadow:0 34px 110px #020b075f,0 0 0 1px #e6ffd51a,inset 0 1px 0 #ffff,inset 0 -1px 0 #06100b59;
+}
+.lab-topline,.lab-footer{border-color:#efffe522}
+.focus-lab .mode-tabs{
+  border-color:#f4ffe52e;
+  background:linear-gradient(180deg,#f8ffe519,#edf7e509);
+  box-shadow:inset 0 1px 0 #fff4,0 7px 24px #050d091c;
+  -webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+}
+.focus-lab .mode-tabs button{min-height:34px;font-size:12px;color:#d3dfcbab;z-index:1}
+.focus-lab .mode-tabs button.active{color:#fbfff7;text-shadow:0 1px 14px #dfffff30}
+.mode-indicator{
+  background:linear-gradient(135deg,#fff4,#e6ffda16 54%,#c5e8ff17);
+  box-shadow:inset 0 1px 0 #fff9,inset 0 -1px 0 #6c8d7445,0 7px 18px #07110c2e,0 0 22px #dbffcb10;
+  transition:transform .62s cubic-bezier(.18,.9,.2,1.08),width .4s;
+}
+.lab-tools{gap:8px}
+.sound-button,.focus-lab .reset-button{
+  display:flex;align-items:center;justify-content:center;gap:7px;min-height:36px;padding:0 11px;border:1px solid #f0ffe525;border-radius:18px;
+  color:#d7e3cfb8;background:linear-gradient(180deg,#fff1,#fff0);
+  box-shadow:inset 0 1px 0 #fff3;transition:color .25s,background .25s,transform .25s,border-color .25s;
+}
+.sound-button{font-size:11px}.sound-button svg{width:14px;height:14px}
+.sound-button:hover,.focus-lab .reset-button:hover{color:#fff;background:#f3ffe518;border-color:#f5ffe54d;transform:translateY(-1px)}
+.sound-button.active svg{filter:drop-shadow(0 0 6px #ddffc6aa)}
+.dial-surface{cursor:ew-resize;filter:drop-shadow(0 18px 25px #02090638)}
+.dial-surface:active,.is-turning .dial-surface{cursor:ew-resize}
+.dial-halo{
+  inset:2%;
+  background:radial-gradient(circle at 32% 18%,#ffffff20,transparent 31%);
+  box-shadow:0 0 0 1px #f7ffe51c,0 0 0 9px #f4ffe507,0 0 0 19px #dfffc903,0 14px 45px #020c075c;
+  transition:transform .55s cubic-bezier(.2,.9,.2,1),box-shadow .5s;
+}
+.is-turning .dial-halo{transform:scale(1.025);box-shadow:0 0 0 1px #fff8,0 0 0 10px #e9ffd711,0 0 0 22px #cbecff08,0 16px 60px #020c0766,0 0 42px #dfffca1c}
+.dial-surface::before{
+  inset:14%;
+  background:
+    radial-gradient(circle at 30% 20%,#fff6 0 2%,#f6ffde26 12%,transparent 38%),
+    radial-gradient(circle at 72% 78%,#b7cfff12,transparent 32%),
+    linear-gradient(145deg,#eefcdd20,#0d181288 58%,#e5d7ff10);
+  border-color:#f2ffe657;
+  box-shadow:inset 0 2px 1px #fff6,inset 0 -2px 2px #07120c70,inset 12px 12px 30px #fff08,9px 16px 31px #020a0666;
+  -webkit-backdrop-filter:blur(22px) saturate(190%);backdrop-filter:blur(22px) saturate(190%);
+  transition:transform .48s cubic-bezier(.2,.9,.2,1),box-shadow .4s;
+}
+.is-turning .dial-surface::before{transform:scale(.965);box-shadow:inset 0 2px 2px #fff9,inset 0 -2px 3px #07120c7a,inset 10px 10px 24px #fff0,5px 9px 18px #020a0673}
+.dial-caustic{
+  position:absolute;inset:13%;z-index:0;border-radius:50%;pointer-events:none;opacity:.55;mix-blend-mode:screen;
+  background:conic-gradient(from 30deg,#b9dfff00,#c4eaff2b,#fff0 30%,#edd5ff24 48%,#deffbd00 62%,#faffd42b 78%,#b9dfff00);
+  filter:blur(7px);transform:rotate(-8deg) translateX(0);transition:transform .52s cubic-bezier(.16,1,.3,1),opacity .3s;
+}
+.is-turning .dial-caustic{opacity:.95}.turning-right .dial-caustic{transform:rotate(13deg) translateX(8px)}.turning-left .dial-caustic{transform:rotate(-24deg) translateX(-8px)}
+.dial-machining{inset:13%;background:repeating-conic-gradient(from var(--dial-angle),#f5ffe537 0deg .48deg,transparent .48deg 3deg);opacity:.72}
+.dial-scale line{stroke:#d9e9d85f}.dial-scale line.major{stroke:#f3ffe5a8}.dial-scale line.passed{stroke:#edffc7;filter:drop-shadow(0 0 2px #dfffa3)}
+.dial-inner-border{stroke:#f5ffe544}.dial-position{fill:#fff}.dial-position-glow{fill:#e9ffc847;stroke:#efffc888;filter:drop-shadow(0 0 7px #eaffb8)}
+.dial-caption{color:#e1edd7ad}.dial-reading{color:var(--glass-ink);text-shadow:0 1px 18px #07120a7a}.is-turning .dial-reading{color:#fbfff2;text-shadow:0 0 29px #efffd66b}
+.dial-unit{color:#d9e8cf}.dial-subtitle{font-size:7px;color:#dbe8d1a3;letter-spacing:1px}
+.scrub-cue{position:absolute;bottom:52px;display:flex;align-items:center;gap:10px;color:#ecf8e5a3;font:7px var(--font-geist-mono),monospace;letter-spacing:1px;transition:color .2s,transform .25s}
+.scrub-cue i{font-style:normal;font-size:12px;opacity:.55;transition:transform .28s,color .25s}.turning-left .scrub-cue i:first-child{transform:translateX(-4px);color:#fff}.turning-right .scrub-cue i:last-child{transform:translateX(4px);color:#fff}
+.dial-precision>button{border-color:#f1ffe541;background:linear-gradient(145deg,#fff2,#fff0);color:#f0fae8;box-shadow:inset 0 1px 0 #fff4,0 5px 16px #020a0633}
+.dial-precision>button:hover{background:#f6ffe525;border-color:#fff9}.dial-precision>button.exact-value{color:#e6f1dd;background:transparent;box-shadow:none}
+.exact-value>span{color:#bbcab2}.exact-entry{border-color:#efffda66;background:linear-gradient(145deg,#e8ffe52b,#101d18e8);box-shadow:inset 0 1px 0 #fff7,0 16px 50px #0009;-webkit-backdrop-filter:blur(30px);backdrop-filter:blur(30px)}
+.axis-dial .dial-surface::before{inset:24%;background:radial-gradient(circle at 35% 24%,#fff4,#101d18b8 58%,#c8dfff10);border-color:#efffe64d;box-shadow:inset 0 1px 1px #fff6,0 9px 22px #020a064d}
+.axis-dial .dial-reading{background:linear-gradient(145deg,#ffffff16,#0b16106b);border:1px solid #fff2;box-shadow:inset 0 1px 0 #fff3}.axis-dial .scrub-cue{display:none}
+.focus-feedback{background:linear-gradient(135deg,#f6ffe52b,#14231bb5);border-color:#f1ffe553;box-shadow:inset 0 1px 0 #fff6,0 12px 36px #020b0752;-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%)}
+.focus-lab .glasses-button{background:linear-gradient(145deg,#f6ffe4e8,#dcecb9c9);box-shadow:inset 0 1px 0 #fff,0 9px 22px #0610084a;border:1px solid #fff9;transition:transform .35s cubic-bezier(.2,.9,.2,1),box-shadow .3s,background .3s}
+.focus-lab .glasses-button:hover{transform:translateY(-2px) scale(1.01);box-shadow:inset 0 1px 0 #fff,0 13px 28px #0610085c}
+.focus-lab .glasses-button.selected{background:linear-gradient(145deg,#eaffd52c,#d7f5ba11);border-color:#ecffd56e;box-shadow:inset 0 1px 0 #fff5,0 0 24px #daffbd10}
+.focus-lab .compare-button{border-color:#f1ffe52e;background:linear-gradient(145deg,#ffffff12,#ffffff03);color:#dce9d4}.hold-progress{background:linear-gradient(90deg,#f6ffe51b,#ccdcff1f,#f2d8ff17)}
+.perception-stops button{font-size:11px}.stop-dot{border-color:#f0ffde6e}.perception-stops button.selected .stop-dot{background:#f4ffdf;border-color:#fff;box-shadow:0 0 0 4px #eaffc317,0 0 16px #e7ffc46b}
+.lab-footer{color:#c9d8c1b5}.gesture-symbol{color:#efffda}.adjusting-focus .gesture-symbol{animation:horizontal-nudge .7s ease-in-out infinite alternate}
+@keyframes horizontal-nudge{to{transform:translateX(5px)}}
+@media(max-width:700px){.sound-button{width:32px;padding:0}.sound-button>span{display:none}.sound-button svg{width:15px}.scrub-cue{bottom:44px;font-size:6px;gap:7px}.focus-lab{border-radius:24px;-webkit-backdrop-filter:blur(34px) saturate(170%);backdrop-filter:blur(34px) saturate(170%)}}
+@media(prefers-reduced-motion:reduce){.dial-caustic,.scrub-cue i,.mode-indicator,.sound-button{transition:none!important}.adjusting-focus .gesture-symbol{animation:none}}

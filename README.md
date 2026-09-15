@@ -1,6 +1,6 @@
 # Lenshift
 
-A full-screen vision simulator that opens directly on the interactive scene, built with Next.js, React, and a custom WebGL optical shader. Compact controls float over the scene; background information is available in an optional dialog.
+A full-screen vision simulator with a cinematic, interactive optical introduction, built with Next.js, React, and a custom WebGL shader. A refractive glass portal follows the pointer, surrounded by moving orbital rings and staggered typography. Entering the experience expands the portal into the working scene, where compact prescription controls float over the photograph. Shared prescription links open directly in the simulator.
 
 ## Development
 
@@ -12,6 +12,10 @@ npm run dev
 Open http://localhost:3000. `npm run build` creates a static export in `out/`; `npm run lint` checks the application.
 
 ## Experience
+
+- Pointer-responsive glass portal with chromatic dispersion, animated calibration rings, and a continuous transition into the simulator.
+- Responsive introduction with keyboard navigation and reduced-motion support; click the wordmark to revisit it.
+- Liquid-glass prescription controls with left/right scrubbing, spring-settled motion, per-step synthesized detent clicks, optional haptics, and a persistent sound toggle.
 
 - Sphere from +6.00 to −10.00 D, with continuous spring interpolation.
 - Three smoothly joined spatial depth regions that respond differently to myopia and hyperopia.
