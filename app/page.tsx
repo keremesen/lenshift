@@ -16,6 +16,7 @@ const bounded=(raw:string|null,min:number,max:number,fallback:number)=>{if(raw==
 
 export default function Home() {
   const [intro, setIntro] = useState(true);
+  const [transitioning, setTransitioning] = useState(false);
   const [sph, setSph] = useState(0);
   const [cyl, setCyl] = useState(0);
   const [axis, setAxis] = useState(90);
@@ -31,6 +32,7 @@ export default function Home() {
   const initialized = useRef(false);
   const infoDialog = useRef<HTMLDialogElement>(null);
   const shareDialog = useRef<HTMLDialogElement>(null);
+  const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const enterButton = useRef<HTMLButtonElement>(null);
   const firstModeButton = useRef<HTMLButtonElement>(null);
 
@@ -54,6 +56,7 @@ export default function Home() {
     window.addEventListener("pointercancel", release);
     return () => {
       cancelAnimationFrame(hydration);
+      if (transitionTimer.current) clearTimeout(transitionTimer.current);
       window.removeEventListener("blur", release);
       window.removeEventListener("pointerup", release);
       window.removeEventListener("pointercancel", release);
@@ -86,11 +89,16 @@ export default function Home() {
     else { setSph(0); setCyl(-1.5); setNight(true); }
   };
   const enterExperience = () => {
+    if (transitioning) return;
+    setTransitioning(true);
     setIntro(false);
     if (sph === 0 && cyl === 0) setSph(-3);
+    transitionTimer.current = setTimeout(() => setTransitioning(false), 1400);
     requestAnimationFrame(() => firstModeButton.current?.focus({ preventScroll: true }));
   };
   const replayIntro = () => {
+    if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    setTransitioning(false);
     setIntro(true);
     setGlasses(false);
     setCompare(false);
@@ -130,18 +138,20 @@ export default function Home() {
   };
 
   const lensPower = mode === "Astigmatism" ? -cyl : Math.abs(sph);
+  const lensMax = mode === "Astigmatism" ? 4 : mode === "Myopia" ? 10 : 6;
   const setLensPower = (value: number) => {
     if (mode === "Astigmatism") setCyl(-value);
     else changeSphere(mode === "Myopia" ? -value : value);
   };
 
   return (
-    <main className={`experience ${intro ? "intro-active" : "simulator-active"} ${glasses ? "wearing-glasses" : ""} ${adjusting ? "adjusting-focus" : ""} ${compare ? "revealing-clarity" : ""}`} id="simulator">
+    <main className={`experience ${intro ? "intro-active" : "simulator-active"} ${transitioning ? "transitioning" : ""} ${glasses ? "wearing-glasses" : ""} ${adjusting ? "adjusting-focus" : ""} ${compare ? "revealing-clarity" : ""}`} id="simulator">
       <div className="scene-area">
         <VisionScene settings={{ sph, cyl, axis, glasses, compare, night, intro, adjusting }} />
       </div>
       <div className="edge-shade" aria-hidden="true" />
       <div className="film-grain" aria-hidden="true" />
+      <div className="refraction-transition" aria-hidden="true"><span /><span /><span /></div>
 
       <div className="scene-touch" aria-hidden="true" inert={intro}
         onPointerDown={e => { if (e.button !== 0) return; e.currentTarget.setPointerCapture(e.pointerId); if (!glasses) setCompare(true); }}
@@ -164,14 +174,15 @@ export default function Home() {
 
       <section className="opening" aria-label="An experiment in perception" inert={!intro} aria-hidden={!intro}>
         <div className="opening-copy">
-          <div className="eyebrow"><span className="live-dot" /> AN EXPERIMENT IN PERCEPTION <span className="edition-number">/ 001</span></div>
-          <h1><span className="title-line"><span>Same world.</span></span><span className="title-line"><span>Different</span></span><span className="title-line focus-line"><span>reality.</span><span className="title-asterisk" aria-hidden="true">✳</span></span></h1>
-          <p className="opening-description">You see the world your way.<br />What if, for a moment, you saw it through someone else’s eyes?</p>
-          <button ref={enterButton} className="enter-experience" onClick={enterExperience}><span>See it differently</span><span className="enter-arrow"><Icon name="arrow" /></span></button>
-          <span className="opening-note">An interactive vision simulator. No two eyes alike.</span>
+          <div className="eyebrow"><span className="live-dot" /> VISION, SHIFTED.</div>
+          <h1><span className="title-line"><span>Same world.</span></span><span className="title-line focus-line"><span>Different reality.</span></span></h1>
+          <p className="opening-description">Borrow another pair of eyes for a moment.</p>
+          <button ref={enterButton} className="enter-experience" onClick={enterExperience}>
+            <span className="enter-ripple" aria-hidden="true"><i /><i /></span>
+            <span className="enter-label"><strong>See it differently</strong><small>Enter the simulator</small></span>
+            <span className="enter-arrow"><Icon name="arrow" /></span>
+          </button>
         </div>
-        <div className="lens-label" aria-hidden="true"><span className="label-line" /><span>REALITY, REFRACTED.<small>MOVE YOUR CURSOR. SHIFT YOUR PERSPECTIVE.</small></span></div>
-        <div className="opening-footer"><span><i /> LIVE OPTICAL EXPERIMENT</span><span className="footer-location">COPENHAGEN, DK <span>55°40′ N 12°34′ E</span></span><button onClick={enterExperience}>Enter the simulator <Icon name="arrow" /></button></div>
       </section>
 
       <div className="scene-caption" aria-hidden={intro}><span className="live-dot" /> THROUGH ANOTHER PAIR OF EYES <span>01 — COPENHAGEN</span></div>
@@ -192,9 +203,10 @@ export default function Home() {
           </div>
           <div className="lab-tools"><span className="lab-edition">THE PERCEPTION LAB</span><button className={`sound-button ${soundEnabled ? "active" : ""}`} onClick={toggleSound} aria-label={soundEnabled ? "Mute adjustment sounds" : "Enable adjustment sounds"} aria-pressed={soundEnabled} title={soundEnabled ? "Sound on" : "Sound off"}><Icon name={soundEnabled ? "sound" : "mute"} /><span>{soundEnabled ? "Sound on" : "Sound off"}</span></button><button className="reset-button" onClick={reset}><Icon name="reset" /><span>Reset</span></button></div>
         </div>
-        <div className={`lab-workspace ${mode === "Astigmatism" ? "has-axis" : ""}`}>
+        <div className={`lab-workspace ${mode === "Astigmatism" ? "has-axis" : ""}`} style={{ "--trace-position": `${7 + lensPower / lensMax * 86}%`, "--trace-tilt": `${(lensPower / lensMax - .5) * 7}deg` } as React.CSSProperties}>
+          <div className="refractive-trace" aria-hidden="true"><i /><span /></div>
           <PerceptionStory mode={mode} value={lensPower} soundEnabled={soundEnabled} onChange={value => { setControlRevision(revision => revision + 1); setLensPower(value); }} />
-          <OpticalDial key={`${mode}-${controlRevision}`} label={mode === "Astigmatism" ? "Cylinder power" : "Sphere power"} value={lensPower} max={mode === "Astigmatism" ? 4 : mode === "Myopia" ? 10 : 6} step={.25} negative={mode !== "Hyperopia"} soundEnabled={soundEnabled} onChange={setLensPower} onEngage={setAdjusting} />
+          <OpticalDial key={`${mode}-${controlRevision}`} label={mode === "Astigmatism" ? "Cylinder power" : "Sphere power"} value={lensPower} max={lensMax} step={.25} negative={mode !== "Hyperopia"} soundEnabled={soundEnabled} onChange={setLensPower} onEngage={setAdjusting} />
           <div className="correction-station">
             {mode === "Astigmatism" ? <OpticalDial key={`axis-${controlRevision}`} label="Astigmatism axis" value={axis} max={180} step={1} axis soundEnabled={soundEnabled} onChange={setAxis} onEngage={setAdjusting} /> : <div className={`correction-art ${glasses || compare ? "is-corrected" : ""}`} aria-hidden="true"><div className="correction-orbit" /><svg viewBox="0 0 200 100" fill="none"><path className="optical-ray ray-one" d="M2 20 72 50 198 35" /><path className="optical-ray ray-two" d="M2 50h196" /><path className="optical-ray ray-three" d="M2 80 72 50 198 65" /><ellipse cx="72" cy="50" rx="13" ry="39" /><ellipse cx="129" cy="50" rx="13" ry="39" /><path className="optical-target" d="M185 30v40m-7-20h14" /></svg><span>A SMALL SHIFT. A WHOLE NEW WORLD.</span></div>}
             <div className="vision-actions">
