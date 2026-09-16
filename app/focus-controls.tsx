@@ -80,6 +80,7 @@ function RollingNumber({ value }: { value: string }) {
 
 export function OpticalDial({ value, max, step, label, negative = false, axis = false, soundEnabled = true, onChange, onEngage }: DialProps) {
   const [active, setActive] = useState(false);
+  const [settling, setSettling] = useState(false);
   const [direction, setDirection] = useState<-1 | 0 | 1>(0);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -87,6 +88,8 @@ export function OpticalDial({ value, max, step, label, negative = false, axis = 
   const slider = useRef<HTMLDivElement>(null);
   const editButton = useRef<HTMLButtonElement>(null);
   const input = useRef<HTMLInputElement>(null);
+  const pulse = useRef<HTMLDivElement>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const motion = useRef({ frame: 0, value, velocity: 0, lastTime: 0, x: 0, distance: 0, dragging: false, pointerId: -1 });
   const callbacks = useRef({ onChange, onEngage });
   useEffect(() => { callbacks.current = { onChange, onEngage }; }, [onChange, onEngage]);
@@ -112,7 +115,7 @@ export function OpticalDial({ value, max, step, label, negative = false, axis = 
       callbacks.current.onEngage(false);
     };
     window.addEventListener("blur", cancel);
-    return () => { cancelAnimationFrame(state.frame); window.removeEventListener("blur", cancel); callbacks.current.onEngage(false); };
+    return () => { cancelAnimationFrame(state.frame); if (settleTimer.current) clearTimeout(settleTimer.current); window.removeEventListener("blur", cancel); callbacks.current.onEngage(false); };
   }, []);
   useEffect(() => { if (editing) { input.current?.focus(); input.current?.select(); } }, [editing]);
 
@@ -126,6 +129,10 @@ export function OpticalDial({ value, max, step, label, negative = false, axis = 
       if (feedback) {
         playDetent(soundEnabled, next / max, next === 0 || next === max);
         if ("vibrate" in navigator && next % (step * 4) === 0) navigator.vibrate(4);
+        pulse.current?.animate([
+          { opacity: .9, transform: "scale(.96) rotate(-8deg)", filter: "hue-rotate(0deg)" },
+          { opacity: 0, transform: "scale(1.18) rotate(14deg)", filter: "hue-rotate(48deg)" },
+        ], { duration: next % (step * 4) === 0 ? 520 : 330, easing: "cubic-bezier(.16,1,.3,1)" });
       }
     }
   };
@@ -134,6 +141,9 @@ export function OpticalDial({ value, max, step, label, negative = false, axis = 
     motion.current.velocity = 0;
     motion.current.value = snap(motion.current.value, 0, max, step);
     setActive(false);
+    setSettling(true);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => setSettling(false), 420);
     setDirection(0);
     callbacks.current.onEngage(false);
   };
@@ -154,6 +164,7 @@ export function OpticalDial({ value, max, step, label, negative = false, axis = 
     event.currentTarget.setPointerCapture(event.pointerId);
     Object.assign(motion.current, { value, velocity: 0, lastTime: performance.now(), x: event.clientX, distance: 0, dragging: true, pointerId: event.pointerId });
     setActive(true);
+    setSettling(false);
     callbacks.current.onEngage(true);
   };
   const move = (event: PointerEvent<HTMLDivElement>) => {
@@ -196,9 +207,10 @@ export function OpticalDial({ value, max, step, label, negative = false, axis = 
   const dot = dialPoint(angle, 122);
   const tickCount = axis ? 72 : 64;
 
-  return <div className={`optical-dial ${axis ? "axis-dial" : "power-dial"} ${active ? "is-turning" : ""} ${direction < 0 ? "turning-left" : direction > 0 ? "turning-right" : ""}`} style={{ "--dial-angle": `${angle}deg`, "--power": value / max } as CSSProperties}>
+  return <div className={`optical-dial ${axis ? "axis-dial" : "power-dial"} ${active ? "is-turning" : ""} ${settling ? "is-settling" : ""} ${direction < 0 ? "turning-left" : direction > 0 ? "turning-right" : ""}`} style={{ "--dial-angle": `${angle}deg`, "--power": value / max } as CSSProperties}>
     <div ref={slider} className="dial-surface" role="slider" tabIndex={0} aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-valuetext={`${axis ? value : display} ${axis ? "degrees" : "diopters"}`} aria-describedby={`${id}-hint`} onKeyDown={keyboard} onPointerDown={start} onPointerMove={move} onPointerUp={e => release(e)} onPointerCancel={e => release(e, true)} onLostPointerCapture={e => { if (motion.current.dragging) release(e, true); }}>
       <div className="dial-halo" />
+      <div ref={pulse} className="dial-detent-pulse" />
       <div className="dial-caustic" />
       <div className="dial-machining" />
       <svg className="dial-scale" viewBox="0 0 280 280" fill="none" aria-hidden="true">

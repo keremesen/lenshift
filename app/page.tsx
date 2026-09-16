@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import VisionScene from "./vision-scene";
 import { OpticalDial, PerceptionStory } from "./focus-controls";
 
@@ -17,6 +17,9 @@ const bounded=(raw:string|null,min:number,max:number,fallback:number)=>{if(raw==
 export default function Home() {
   const [intro, setIntro] = useState(true);
   const [transitioning, setTransitioning] = useState(false);
+  const [modeChanging, setModeChanging] = useState(false);
+  const [recalibrating, setRecalibrating] = useState(false);
+  const [lightShifting, setLightShifting] = useState(false);
   const [sph, setSph] = useState(0);
   const [cyl, setCyl] = useState(0);
   const [axis, setAxis] = useState(90);
@@ -28,15 +31,20 @@ export default function Home() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [controlRevision, setControlRevision] = useState(0);
   const [shared, setShared] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [guideStep, setGuideStep] = useState<0 | 1 | 2 | 3>(3);
   const [shareFallback, setShareFallback] = useState("");
   const initialized = useRef(false);
   const infoDialog = useRef<HTMLDialogElement>(null);
   const shareDialog = useRef<HTMLDialogElement>(null);
   const transitionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const effectTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const enterButton = useRef<HTMLButtonElement>(null);
   const firstModeButton = useRef<HTMLButtonElement>(null);
+  const experienceRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    const timers = effectTimers.current;
     const p = new URLSearchParams(window.location.search);
     const initialSph = bounded(p.get("sph"), -10, 6, 0);
     const initialCyl = bounded(p.get("cyl"), -4, 0, 0);
@@ -46,7 +54,9 @@ export default function Home() {
       setAxis(Math.round(bounded(p.get("axis"), 0, 180, 90)));
       setNight(p.get("night") === "1");
       setSoundEnabled(window.localStorage.getItem("lenshift-sound") !== "off");
-      if (["sph", "cyl", "axis", "mode", "night"].some(key => p.has(key))) setIntro(false);
+      const hasSharedSettings = ["sph", "cyl", "axis", "mode", "night"].some(key => p.has(key));
+      if (hasSharedSettings) setIntro(false);
+      if (!hasSharedSettings && window.localStorage.getItem("lenshift-guide") !== "complete") setGuideStep(0);
       setMode(p.get("mode") === "Astigmatism" || initialCyl !== 0 ? "Astigmatism" : initialSph > 0 || (initialSph === 0 && p.get("mode") === "Hyperopia") ? "Hyperopia" : "Myopia");
       initialized.current = true;
     });
@@ -57,9 +67,70 @@ export default function Home() {
     return () => {
       cancelAnimationFrame(hydration);
       if (transitionTimer.current) clearTimeout(transitionTimer.current);
+      timers.forEach(clearTimeout);
       window.removeEventListener("blur", release);
       window.removeEventListener("pointerup", release);
       window.removeEventListener("pointercancel", release);
+    };
+  }, []);
+
+  const advanceGuide = (step: 1 | 2) => setGuideStep(current => current < step ? step : current);
+  const completeGuide = () => {
+    setGuideStep(3);
+    window.localStorage.setItem("lenshift-guide", "complete");
+  };
+
+  useEffect(() => {
+    const root = experienceRef.current;
+    if (!root) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const coarse = window.matchMedia("(pointer: coarse)");
+    const target = { x: .5, y: .45, speed: 0 };
+    const current = { x: .5, y: .45, speed: 0 };
+    let previous = { x: innerWidth * .5, y: innerHeight * .45, time: performance.now() };
+    let frame = 0;
+    const move = (event: globalThis.PointerEvent) => {
+      const now = performance.now();
+      const elapsed = Math.max(8, now - previous.time);
+      target.x = event.clientX / Math.max(innerWidth, 1);
+      target.y = event.clientY / Math.max(innerHeight, 1);
+      target.speed = Math.min(1, Math.hypot(event.clientX - previous.x, event.clientY - previous.y) / elapsed / 1.4);
+      previous = { x: event.clientX, y: event.clientY, time: now };
+    };
+    const animate = () => {
+      const still = reduced.matches;
+      const ease = still ? 1 : .11;
+      current.x += (target.x - current.x) * ease;
+      current.y += (target.y - current.y) * ease;
+      current.speed += (target.speed - current.speed) * (still ? 1 : .14);
+      target.speed *= .9;
+      root.style.setProperty("--pointer-x", `${(current.x * 100).toFixed(2)}%`);
+      root.style.setProperty("--pointer-y", `${(current.y * 100).toFixed(2)}%`);
+      root.style.setProperty("--pointer-nx", (current.x * 2 - 1).toFixed(4));
+      root.style.setProperty("--pointer-ny", (current.y * 2 - 1).toFixed(4));
+      root.style.setProperty("--pointer-speed", current.speed.toFixed(3));
+      if (!still && !coarse.matches) {
+        root.querySelectorAll<HTMLElement>("[data-magnetic]").forEach(element => {
+          const rect = element.getBoundingClientRect();
+          const dx = current.x * innerWidth - (rect.left + rect.width / 2);
+          const dy = current.y * innerHeight - (rect.top + rect.height / 2);
+          const distance = Math.hypot(dx, dy);
+          const pull = Math.max(0, 1 - distance / Math.max(110, rect.width * 1.7));
+          element.style.setProperty("--mag-x", `${(dx * pull * .09).toFixed(2)}px`);
+          element.style.setProperty("--mag-y", `${(dy * pull * .09).toFixed(2)}px`);
+          element.style.setProperty("--mag-tilt-x", `${(-dy * pull * .025).toFixed(2)}deg`);
+          element.style.setProperty("--mag-tilt-y", `${(dx * pull * .025).toFixed(2)}deg`);
+        });
+      }
+      frame = requestAnimationFrame(animate);
+    };
+    window.addEventListener("pointermove", move, { passive: true });
+    window.addEventListener("pointerdown", move, { passive: true });
+    frame = requestAnimationFrame(animate);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerdown", move);
     };
   }, []);
 
@@ -83,10 +154,14 @@ export default function Home() {
   }, [shareFallback]);
 
   const chooseMode = (next: Mode) => {
+    advanceGuide(1);
+    if (next === mode) return;
+    setModeChanging(true);
     setMode(next);
     if (next === "Myopia") { setSph(-2); setCyl(0); }
     else if (next === "Hyperopia") { setSph(2); setCyl(0); }
     else { setSph(0); setCyl(-1.5); setNight(true); }
+    effectTimers.current.push(setTimeout(() => setModeChanging(false), 820));
   };
   const enterExperience = () => {
     if (transitioning) return;
@@ -108,8 +183,18 @@ export default function Home() {
     setSph(value);
   };
   const reset = () => {
+    setRecalibrating(true);
     setControlRevision(value => value + 1);
-    setSph(0); setCyl(0); setAxis(90); setGlasses(false); setCompare(false); setAdjusting(false);
+    setGlasses(false); setCompare(false); setAdjusting(false);
+    effectTimers.current.push(setTimeout(() => { setSph(0); setCyl(0); }, 120));
+    effectTimers.current.push(setTimeout(() => setAxis(90), 280));
+    effectTimers.current.push(setTimeout(() => setRecalibrating(false), 1250));
+  };
+  const setLighting = (next: boolean) => {
+    if (next === night) return;
+    setLightShifting(true);
+    setNight(next);
+    effectTimers.current.push(setTimeout(() => setLightShifting(false), 1100));
   };
   const toggleSound = () => {
     setSoundEnabled(current => {
@@ -131,7 +216,9 @@ export default function Home() {
       if (navigator.share) await navigator.share({ title: "Lenshift", text, url: url.toString() });
       else await navigator.clipboard.writeText(url.toString());
       setShared(true);
-      setTimeout(() => setShared(false), 2500);
+      setCapturing(true);
+      effectTimers.current.push(setTimeout(() => setCapturing(false), 900));
+      effectTimers.current.push(setTimeout(() => setShared(false), 2500));
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) setShareFallback(url.toString());
     }
@@ -145,16 +232,22 @@ export default function Home() {
   };
 
   return (
-    <main className={`experience ${intro ? "intro-active" : "simulator-active"} ${transitioning ? "transitioning" : ""} ${glasses ? "wearing-glasses" : ""} ${adjusting ? "adjusting-focus" : ""} ${compare ? "revealing-clarity" : ""}`} id="simulator">
+    <main ref={experienceRef} className={`experience ${intro ? "intro-active" : "simulator-active"} ${transitioning ? "transitioning" : ""} ${glasses ? "wearing-glasses" : ""} ${adjusting ? "adjusting-focus" : ""} ${compare ? "revealing-clarity" : ""} ${modeChanging ? "mode-changing" : ""} ${recalibrating ? "recalibrating" : ""} ${lightShifting ? "light-shifting" : ""} ${capturing ? "capturing-vision" : ""} mode-${mode.toLowerCase()}`} id="simulator">
       <div className="scene-area">
-        <VisionScene settings={{ sph, cyl, axis, glasses, compare, night, intro, adjusting }} />
+        <VisionScene settings={{ sph, cyl, axis, glasses, compare, night, intro, adjusting, mode, modeChanging, recalibrating }} />
       </div>
       <div className="edge-shade" aria-hidden="true" />
       <div className="film-grain" aria-hidden="true" />
+      <div className="optical-atmosphere" aria-hidden="true"><i className="spectral-pressure" /><i className="caustic caustic-one" /><i className="caustic caustic-two" /><i className="light-leak" /><i className="pointer-trail" /></div>
+      <div className="iris-vignette" aria-hidden="true"><i /><i /><i /></div>
+      <div className="clarity-rings" aria-hidden="true"><i /><i /><i /></div>
+      <div className="recalibration-field" aria-hidden="true"><i /><i /><span>OPTICAL RECALIBRATION</span></div>
+      <div className="lens-capture" aria-hidden="true"><i /><i /><span>VISION CAPTURED</span></div>
+      <div className="light-sweep" aria-hidden="true" />
       <div className="refraction-transition" aria-hidden="true"><span /><span /><span /></div>
 
       <div className="scene-touch" aria-hidden="true" inert={intro}
-        onPointerDown={e => { if (e.button !== 0) return; e.currentTarget.setPointerCapture(e.pointerId); if (!glasses) setCompare(true); }}
+        onPointerDown={e => { if (e.button !== 0) return; e.currentTarget.setPointerCapture(e.pointerId); if (!glasses) { setCompare(true); completeGuide(); } }}
         onPointerUp={() => setCompare(false)} onPointerCancel={() => setCompare(false)} onLostPointerCapture={() => setCompare(false)} />
 
       <header className="site-header">
@@ -164,20 +257,20 @@ export default function Home() {
         <span className="header-edition">A different way to see.</span>
         <div className="header-actions">
           <div className="scene-toggle" role="group" aria-label="Scene lighting">
-            <button aria-pressed={!night} aria-label="Evening" onClick={() => setNight(false)} className={!night ? "active" : ""}><Icon name="sun" /></button>
-            <button aria-pressed={night} aria-label="Night" onClick={() => setNight(true)} className={night ? "active" : ""}><Icon name="moon" /></button>
+            <button data-magnetic aria-pressed={!night} aria-label="Evening" onClick={() => setLighting(false)} className={!night ? "active" : ""}><Icon name="sun" /></button>
+            <button data-magnetic aria-pressed={night} aria-label="Night" onClick={() => setLighting(true)} className={night ? "active" : ""}><Icon name="moon" /></button>
           </div>
-          <button className="icon-button" aria-label="About this simulation" title="About this simulation" onClick={() => infoDialog.current?.showModal()}><Icon name="info" /></button>
-          <button className="share-button" aria-label={shared ? "Link copied" : "Share my vision"} onClick={share}><span>{shared ? "Copied" : "Share"}</span><Icon name={shared ? "check" : "arrow"} /></button>
+          <button data-magnetic className="icon-button" aria-label="About this simulation" title="About this simulation" onClick={() => infoDialog.current?.showModal()}><Icon name="info" /></button>
+          <button data-magnetic className={`share-button ${shared ? "share-success" : ""}`} aria-label={shared ? "Link copied" : "Share my vision"} onClick={share}><span>{shared ? "Copied" : "Share"}</span><Icon name={shared ? "check" : "arrow"} /></button>
         </div>
       </header>
 
       <section className="opening" aria-label="An experiment in perception" inert={!intro} aria-hidden={!intro}>
         <div className="opening-copy">
           <div className="eyebrow"><span className="live-dot" /> VISION, SHIFTED.</div>
-          <h1><span className="title-line"><span>Same world.</span></span><span className="title-line focus-line"><span>Different reality.</span></span></h1>
+          <h1><span className="title-line"><span className="optical-title-word"><i aria-hidden="true">Same world.</i><b aria-hidden="true">Same world.</b><span>Same world.</span></span></span><span className="title-line focus-line"><span className="optical-title-word"><i aria-hidden="true">Different reality.</i><b aria-hidden="true">Different reality.</b><span>Different reality.</span></span></span></h1>
           <p className="opening-description">Borrow another pair of eyes for a moment.</p>
-          <button ref={enterButton} className="enter-experience" onClick={enterExperience}>
+          <button ref={enterButton} data-magnetic className="enter-experience" onClick={enterExperience}>
             <span className="enter-ripple" aria-hidden="true"><i /><i /></span>
             <span className="enter-label"><strong>See it differently</strong><small>Enter the simulator</small></span>
             <span className="enter-arrow"><Icon name="arrow" /></span>
@@ -189,29 +282,29 @@ export default function Home() {
 
       <div className="scene-invitation" aria-hidden={intro}>
         <span className="scene-crosshair" aria-hidden="true"><i /><i /></span>
-        <span>{compare ? "A moment of clarity." : glasses ? "Your own little window of clarity." : "How does your world feel?"}</span>
-        <small>{compare ? "RELEASE TO RETURN TO YOUR VISION" : glasses ? "MOVE ACROSS THE SCENE TO LOOK THROUGH THE LENSES" : "PRESS & HOLD THE SCENE TO SEE CLEARLY"}</small>
+        <span>{guideStep === 0 ? "Choose how vision shifts." : guideStep === 1 ? "Turn the optical dial." : guideStep === 2 ? "Now find clarity." : compare ? "A moment of clarity." : glasses ? "Your own little window of clarity." : "How does your world feel?"}</span>
+        <small>{guideStep === 0 ? "START WITH A CONDITION BELOW" : guideStep === 1 ? "SLIDE THE DIAL AND WATCH THE SCENE REFOCUS" : guideStep === 2 ? "PRESS & HOLD THE SCENE TO REVEAL 20/20" : compare ? "RELEASE TO RETURN TO YOUR VISION" : glasses ? "MOVE ACROSS THE SCENE TO LOOK THROUGH THE LENSES" : "PRESS & HOLD THE SCENE TO SEE CLEARLY"}</small>
       </div>
       <div className="focus-feedback" aria-hidden="true"><span>{mode === "Astigmatism" ? "REFRACTING" : "REFOCUSING"}</span><i /><span>{format(mode === "Astigmatism" ? cyl : sph)} D</span></div>
       <div className="clarity-status" role="status">{compare ? "Clear view · release to return" : glasses ? "Glasses on · move across the scene" : ""}</div>
 
       <section className="focus-lab" aria-label="Prescription controls" inert={intro} aria-hidden={intro}>
         <div className="lab-topline">
-          <div className="mode-tabs" role="group" aria-label="Vision condition" style={{ "--mode-index": (["Myopia", "Hyperopia", "Astigmatism"] as Mode[]).indexOf(mode) } as React.CSSProperties}>
+          <div className="mode-tabs" role="group" aria-label="Vision condition" style={{ "--mode-index": (["Myopia", "Hyperopia", "Astigmatism"] as Mode[]).indexOf(mode) } as CSSProperties}>
             <span className="mode-indicator" aria-hidden="true" />
-            {(["Myopia", "Hyperopia", "Astigmatism"] as Mode[]).map((m, i) => <button key={m} ref={i === 0 ? firstModeButton : undefined} onClick={() => chooseMode(m)} aria-pressed={mode === m} className={mode === m ? "active" : ""}><span className="mode-number">0{i + 1}</span>{m}</button>)}
+            {(["Myopia", "Hyperopia", "Astigmatism"] as Mode[]).map((m, i) => <button data-magnetic key={m} ref={i === 0 ? firstModeButton : undefined} onClick={() => chooseMode(m)} aria-pressed={mode === m} className={mode === m ? "active" : ""}><span className="mode-number">0{i + 1}</span>{m}</button>)}
           </div>
           <div className="lab-tools"><span className="lab-edition">THE PERCEPTION LAB</span><button className={`sound-button ${soundEnabled ? "active" : ""}`} onClick={toggleSound} aria-label={soundEnabled ? "Mute adjustment sounds" : "Enable adjustment sounds"} aria-pressed={soundEnabled} title={soundEnabled ? "Sound on" : "Sound off"}><Icon name={soundEnabled ? "sound" : "mute"} /><span>{soundEnabled ? "Sound on" : "Sound off"}</span></button><button className="reset-button" onClick={reset}><Icon name="reset" /><span>Reset</span></button></div>
         </div>
         <div className={`lab-workspace ${mode === "Astigmatism" ? "has-axis" : ""}`} style={{ "--trace-position": `${7 + lensPower / lensMax * 86}%`, "--trace-tilt": `${(lensPower / lensMax - .5) * 7}deg` } as React.CSSProperties}>
           <div className="refractive-trace" aria-hidden="true"><i /><span /></div>
-          <PerceptionStory mode={mode} value={lensPower} soundEnabled={soundEnabled} onChange={value => { setControlRevision(revision => revision + 1); setLensPower(value); }} />
-          <OpticalDial key={`${mode}-${controlRevision}`} label={mode === "Astigmatism" ? "Cylinder power" : "Sphere power"} value={lensPower} max={lensMax} step={.25} negative={mode !== "Hyperopia"} soundEnabled={soundEnabled} onChange={setLensPower} onEngage={setAdjusting} />
+          <PerceptionStory mode={mode} value={lensPower} soundEnabled={soundEnabled} onChange={value => { advanceGuide(2); setControlRevision(revision => revision + 1); setLensPower(value); }} />
+          <OpticalDial key={`${mode}-${controlRevision}`} label={mode === "Astigmatism" ? "Cylinder power" : "Sphere power"} value={lensPower} max={lensMax} step={.25} negative={mode !== "Hyperopia"} soundEnabled={soundEnabled} onChange={value => { advanceGuide(2); setLensPower(value); }} onEngage={active => { setAdjusting(active); if (active) advanceGuide(2); }} />
           <div className="correction-station">
             {mode === "Astigmatism" ? <OpticalDial key={`axis-${controlRevision}`} label="Astigmatism axis" value={axis} max={180} step={1} axis soundEnabled={soundEnabled} onChange={setAxis} onEngage={setAdjusting} /> : <div className={`correction-art ${glasses || compare ? "is-corrected" : ""}`} aria-hidden="true"><div className="correction-orbit" /><svg viewBox="0 0 200 100" fill="none"><path className="optical-ray ray-one" d="M2 20 72 50 198 35" /><path className="optical-ray ray-two" d="M2 50h196" /><path className="optical-ray ray-three" d="M2 80 72 50 198 65" /><ellipse cx="72" cy="50" rx="13" ry="39" /><ellipse cx="129" cy="50" rx="13" ry="39" /><path className="optical-target" d="M185 30v40m-7-20h14" /></svg><span>A SMALL SHIFT. A WHOLE NEW WORLD.</span></div>}
             <div className="vision-actions">
-              <button className={`glasses-button ${glasses ? "selected" : ""}`} aria-pressed={glasses} onClick={() => setGlasses(!glasses)}><Icon name="glasses" /><span>{glasses ? "Take off glasses" : "Try the correction"}</span><span className="action-indicator" /></button>
-              <button className={`compare-button ${compare ? "held" : ""}`} onPointerDown={e => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); setCompare(true); }} onPointerUp={() => setCompare(false)} onPointerCancel={() => setCompare(false)} onLostPointerCapture={() => setCompare(false)} onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCompare(true); } }} onKeyUp={e => { if (e.key === " " || e.key === "Enter") setCompare(false); }} onBlur={() => setCompare(false)} aria-pressed={compare}><Icon name="eye" /><span>{compare ? "A moment of clarity" : "Hold for a clear view"}</span><span className="hold-progress" /></button>
+              <button data-magnetic className={`glasses-button ${glasses ? "selected" : ""}`} aria-pressed={glasses} onClick={() => setGlasses(!glasses)}><Icon name="glasses" /><span>{glasses ? "Take off glasses" : "Try the correction"}</span><span className="action-indicator" /></button>
+              <button data-magnetic className={`compare-button ${compare ? "held" : ""}`} onPointerDown={e => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); setCompare(true); completeGuide(); }} onPointerUp={() => setCompare(false)} onPointerCancel={() => setCompare(false)} onLostPointerCapture={() => setCompare(false)} onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setCompare(true); completeGuide(); } }} onKeyUp={e => { if (e.key === " " || e.key === "Enter") setCompare(false); }} onBlur={() => setCompare(false)} aria-pressed={compare}><Icon name="eye" /><span>{compare ? "A moment of clarity" : "Hold for a clear view"}</span><span className="hold-progress" /></button>
             </div>
           </div>
         </div>

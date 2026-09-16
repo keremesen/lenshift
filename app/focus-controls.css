@@ -344,3 +344,59 @@
   .focus-lab{bottom:10px}.lab-topline{height:42px}.lab-workspace{min-height:156px}.optical-dial{width:150px}.axis-dial{width:94px}.dial-reading{font-size:27px}.lab-footer{height:26px}.perception-story h2{font-size:19px}.perception-stops{margin-top:8px}.perception-stops button{min-height:20px}.scene-invitation{top:25%}
 }
 @media(prefers-reduced-motion:reduce){.refractive-trace i,.refractive-trace span{transition:none!important}.adjusting-focus .refractive-trace i{animation:none}}
+
+/* Physical instrument response. */
+.focus-lab{perspective:1200px;transform-style:preserve-3d}
+.focus-lab::before{
+  background:
+    radial-gradient(circle at var(--pointer-x) var(--pointer-y),#ffffff28 0,transparent 22%),
+    linear-gradient(102deg,#efffd514,transparent 24%,transparent 72%,#cce9ff0d);
+  transition:opacity .28s;
+}
+.mode-indicator{
+  border-radius:18px 21px 17px 22px/19px 17px 22px 18px;
+  transform:translateX(calc(var(--mode-index)*100%)) scaleX(1.04);
+  transform-origin:calc((2 - var(--mode-index))*50%) center;
+}
+.mode-changing .mode-indicator{animation:liquid-tab .72s cubic-bezier(.16,1,.3,1)}
+.simulator-active.mode-changing .perception-story{animation:mode-text-fracture .72s cubic-bezier(.16,1,.3,1) both}
+.mode-myopia.mode-changing .refractive-trace{animation:trace-compress .72s ease-out}
+.mode-hyperopia.mode-changing .refractive-trace{animation:trace-expand .72s ease-out}
+.mode-astigmatism.mode-changing .refractive-trace{animation:trace-axis .72s ease-out}
+.dial-detent-pulse{position:absolute;inset:3%;z-index:-1;border:1px solid #efffd8bd;border-radius:50%;opacity:0;box-shadow:0 0 22px #e8ffc944,inset 0 0 22px #bddfff1f;pointer-events:none}
+.is-turning .dial-scale{filter:blur(.42px) drop-shadow(calc(var(--pointer-speed)*8px) 0 3px #d9ffc55e)}
+.is-turning .dial-machining{opacity:calc(.62 + var(--pointer-speed)*.25);filter:blur(calc(var(--pointer-speed)*.9px))}
+.is-settling .dial-surface{animation:dial-seat .42s cubic-bezier(.16,1,.3,1)}
+.power-dial .dial-halo::after{content:"";position:absolute;inset:calc(9% - var(--power)*4%);border-radius:50%;border:1px solid color-mix(in srgb,var(--spectral-lime) calc(18% + var(--power)*38%),transparent);box-shadow:0 0 calc(12px + var(--power)*30px) #ddffc726;opacity:calc(.22 + var(--power)*.66);transition:inset .4s,opacity .35s,box-shadow .4s}
+.number-window{mask-image:linear-gradient(transparent,#000 18% 82%,transparent)}
+.is-turning .number-reel{filter:blur(.55px);transition-duration:.18s}
+.dial-caustic{background:conic-gradient(from calc(30deg + var(--pointer-nx)*24deg),#b9dfff00,#c4eaff35,#fff0 30%,#edd5ff2b 48%,#deffbd00 62%,#faffd439 78%,#b9dfff00)}
+.focus-lab .glasses-button svg{transition:transform .65s cubic-bezier(.16,1,.3,1),filter .4s}
+.focus-lab .glasses-button.selected svg{transform:perspective(90px) rotateX(14deg) scaleX(1.15);filter:drop-shadow(2px 0 4px #bde2ff8c) drop-shadow(-2px 0 4px #f3d8ff5c)}
+.focus-lab .compare-button::after{content:"";position:absolute;inset:-55% -10%;border-radius:48% 52% 44% 56%/57% 43% 55% 45%;border:1px solid #efffd44a;opacity:0;transform:scale(.45);transition:transform .78s cubic-bezier(.16,1,.3,1),opacity .25s;box-shadow:inset 0 0 20px #cde2ff20}
+.focus-lab .compare-button.held::after{opacity:.8;transform:scale(1.15);animation:button-membrane 2.4s .7s ease-in-out infinite alternate}
+.hold-progress{transform-origin:center;border-radius:48% 52% 45% 55%/57% 46% 54% 43%;filter:blur(.2px)}
+.compare-button.held .hold-progress{transform:scaleX(1.08) scaleY(.82)}
+.recalibrating .optical-dial{animation:control-zero .82s cubic-bezier(.16,1,.3,1)}
+.recalibrating .mode-indicator{filter:brightness(1.45);box-shadow:inset 0 1px 0 #fff,0 0 32px #e7ffca38}
+
+@keyframes liquid-tab{0%{border-radius:18px;transform:translateX(calc(var(--mode-index)*100%)) scaleX(.64) scaleY(1.16);filter:blur(4px)}48%{border-radius:28px 13px 24px 15px/14px 25px 15px 24px;transform:translateX(calc(var(--mode-index)*100%)) scaleX(1.13) scaleY(.91)}100%{transform:translateX(calc(var(--mode-index)*100%)) scaleX(1.04);filter:none}}
+@keyframes trace-compress{50%{transform:scaleX(.72);filter:blur(3px)}}
+@keyframes trace-expand{50%{transform:scaleX(1.18);filter:brightness(1.5) blur(2px)}}
+@keyframes trace-axis{50%{transform:rotate(4deg) skewX(8deg);filter:hue-rotate(35deg) blur(1px)}}
+@keyframes dial-seat{0%{transform:scale(.985) rotate(-.5deg)}55%{transform:scale(1.015) rotate(.3deg)}100%{transform:none}}
+@keyframes button-membrane{to{border-radius:57% 43% 54% 46%/45% 59% 41% 55%;rotate:3deg}}
+@keyframes control-zero{0%{filter:none}38%{filter:blur(2px) brightness(1.4);transform:scale(.96) rotate(-1deg)}100%{filter:none;transform:none}}
+@media(prefers-reduced-motion:reduce){.mode-changing .mode-indicator,.is-settling .dial-surface,.recalibrating .optical-dial,.mode-myopia.mode-changing .refractive-trace,.mode-hyperopia.mode-changing .refractive-trace,.mode-astigmatism.mode-changing .refractive-trace{animation:none!important}.is-turning .dial-scale,.is-turning .dial-machining{filter:none}.focus-lab .compare-button.held::after{animation:none}}
+
+/* Thumb-reachable controls: mobile is a deliberate instrument layout, not a compressed desktop panel. */
+@media(max-width:760px){
+  .focus-lab .lab-topline{height:54px}
+  .focus-lab .mode-tabs{min-height:44px}
+  .focus-lab .mode-tabs button{min-height:44px}
+  .focus-lab .sound-button,.focus-lab .reset-button{width:44px;min-width:44px;height:44px;min-height:44px;padding:0}
+  .focus-lab .lab-workspace{min-height:194px}
+  .focus-lab .dial-precision>button,.focus-lab .axis-dial .dial-precision>button{width:44px;height:44px;min-width:44px;min-height:44px}
+  .focus-lab .glasses-button,.focus-lab .compare-button,.focus-lab .has-axis .glasses-button,.focus-lab .has-axis .compare-button{height:44px;min-height:44px}
+  .focus-lab .lab-footer{height:auto;min-height:38px;padding-block:6px}
+}
