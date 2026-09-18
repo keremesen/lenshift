@@ -11,6 +11,8 @@ npm run dev
 
 Open http://localhost:3000. `npm run build` creates a static export in `out/`; `npm run lint` checks the application.
 
+Set `SITE_URL` to the production origin when building outside Vercel so canonical and social-sharing URLs are absolute (for example, `SITE_URL=https://example.com npm run build`). Vercel production URLs are detected automatically.
+
 ## Experience
 
 - Pointer-responsive glass portal with chromatic dispersion, animated calibration rings, and a continuous transition into the simulator.
