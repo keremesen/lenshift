@@ -282,8 +282,8 @@ export default function Home() {
 
       <div className="scene-invitation" aria-hidden={intro}>
         <span className="scene-crosshair" aria-hidden="true"><i /><i /></span>
-        <span>{guideStep === 0 ? "Choose how vision shifts." : guideStep === 1 ? "Turn the optical dial." : guideStep === 2 ? "Now find clarity." : compare ? "A moment of clarity." : glasses ? "Your own little window of clarity." : "How does your world feel?"}</span>
-        <small>{guideStep === 0 ? "START WITH A CONDITION BELOW" : guideStep === 1 ? "SLIDE THE DIAL AND WATCH THE SCENE REFOCUS" : guideStep === 2 ? "PRESS & HOLD THE SCENE TO REVEAL 20/20" : compare ? "RELEASE TO RETURN TO YOUR VISION" : glasses ? "MOVE ACROSS THE SCENE TO LOOK THROUGH THE LENSES" : "PRESS & HOLD THE SCENE TO SEE CLEARLY"}</small>
+        <span>{guideStep === 0 ? "Choose how vision shifts." : guideStep === 1 ? "Find your focus." : guideStep === 2 ? "Now find clarity." : compare ? "A moment of clarity." : glasses ? "Your own little window of clarity." : "How does your world feel?"}</span>
+        <small>{guideStep === 0 ? "START WITH A CONDITION BELOW" : guideStep === 1 ? "SLIDE THE RULER AND WATCH THE SCENE REFOCUS" : guideStep === 2 ? "PRESS & HOLD THE SCENE TO REVEAL 20/20" : compare ? "RELEASE TO RETURN TO YOUR VISION" : glasses ? "MOVE ACROSS THE SCENE TO LOOK THROUGH THE LENSES" : "PRESS & HOLD THE SCENE TO SEE CLEARLY"}</small>
       </div>
       <div className="focus-feedback" aria-hidden="true"><span>{mode === "Astigmatism" ? "REFRACTING" : "REFOCUSING"}</span><i /><span>{format(mode === "Astigmatism" ? cyl : sph)} D</span></div>
       <div className="clarity-status" role="status">{compare ? "Clear view · release to return" : glasses ? "Glasses on · move across the scene" : ""}</div>
@@ -292,12 +292,11 @@ export default function Home() {
         <div className="lab-topline">
           <div className="mode-tabs" role="group" aria-label="Vision condition" style={{ "--mode-index": (["Myopia", "Hyperopia", "Astigmatism"] as Mode[]).indexOf(mode) } as CSSProperties}>
             <span className="mode-indicator" aria-hidden="true" />
-            {(["Myopia", "Hyperopia", "Astigmatism"] as Mode[]).map((m, i) => <button data-magnetic key={m} ref={i === 0 ? firstModeButton : undefined} onClick={() => chooseMode(m)} aria-pressed={mode === m} className={mode === m ? "active" : ""}><span className="mode-number">0{i + 1}</span>{m}</button>)}
+            {(["Myopia", "Hyperopia", "Astigmatism"] as Mode[]).map((m, i) => <button data-magnetic key={m} ref={i === 0 ? firstModeButton : undefined} onClick={() => chooseMode(m)} aria-pressed={mode === m} className={mode === m ? "active" : ""}><svg className="mode-glyph" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d={m === "Myopia" ? "M4 7v10m16-10v10M8 12h8m-3-3 3 3-3 3" : m === "Hyperopia" ? "M8 5v14m8-14v14M2 12h5m10 0h5M4 10l-2 2 2 2m16-4 2 2-2 2" : "M5 5l14 14M5 19 19 5M12 3v18M3 12h18"} /></svg>{m}</button>)}
           </div>
-          <div className="lab-tools"><span className="lab-edition">THE PERCEPTION LAB</span><button className={`sound-button ${soundEnabled ? "active" : ""}`} onClick={toggleSound} aria-label={soundEnabled ? "Mute adjustment sounds" : "Enable adjustment sounds"} aria-pressed={soundEnabled} title={soundEnabled ? "Sound on" : "Sound off"}><Icon name={soundEnabled ? "sound" : "mute"} /><span>{soundEnabled ? "Sound on" : "Sound off"}</span></button><button className="reset-button" onClick={reset}><Icon name="reset" /><span>Reset</span></button></div>
+          <div className="lab-tools"><button className={`sound-button ${soundEnabled ? "active" : ""}`} onClick={toggleSound} aria-label={soundEnabled ? "Mute adjustment sounds" : "Enable adjustment sounds"} aria-pressed={soundEnabled} title={soundEnabled ? "Sound on" : "Sound off"}><Icon name={soundEnabled ? "sound" : "mute"} /><span>{soundEnabled ? "Sound on" : "Sound off"}</span></button><button className="reset-button" onClick={reset} aria-label="Reset prescription" title="Reset prescription"><Icon name="reset" /><span>Reset</span></button></div>
         </div>
-        <div className={`lab-workspace ${mode === "Astigmatism" ? "has-axis" : ""}`} style={{ "--trace-position": `${7 + lensPower / lensMax * 86}%`, "--trace-tilt": `${(lensPower / lensMax - .5) * 7}deg` } as React.CSSProperties}>
-          <div className="refractive-trace" aria-hidden="true"><i /><span /></div>
+        <div className={`lab-workspace ${mode === "Astigmatism" ? "has-axis" : ""}`}>
           <PerceptionStory mode={mode} value={lensPower} soundEnabled={soundEnabled} onChange={value => { advanceGuide(2); setControlRevision(revision => revision + 1); setLensPower(value); }} />
           <OpticalDial key={`${mode}-${controlRevision}`} label={mode === "Astigmatism" ? "Cylinder power" : "Sphere power"} value={lensPower} max={lensMax} step={.25} negative={mode !== "Hyperopia"} soundEnabled={soundEnabled} onChange={value => { advanceGuide(2); setLensPower(value); }} onEngage={active => { setAdjusting(active); if (active) advanceGuide(2); }} />
           <div className="correction-station">
@@ -315,7 +314,7 @@ export default function Home() {
         <div className="dialog-content">
           <button className="dialog-close" aria-label="Close" onClick={() => infoDialog.current?.close()}><Icon name="close" /></button>
           <h2 id="info-title">About the simulation</h2>
-          <p>Slide the glass dial left or right to change focus. Every step has a quiet mechanical click; you can mute it from the control panel. Hold Shift while dragging for finer control. You can also use the arrow keys, the + and − buttons, or click the step label to enter an exact value. Try glasses for a corrected view through each lens. Press and hold the scene or the clear-view button to compare.</p>
+          <p>Slide the glass ruler left or right to change focus. Every step has a quiet mechanical click; you can mute it from the control panel. Hold Shift while dragging for finer control. You can also use the arrow keys, the + and − buttons, or click the step label to enter an exact value. Try glasses for a corrected view through each lens. Press and hold the scene or the clear-view button to compare.</p>
           <p>This is a visual approximation, not a diagnostic tool. Real vision varies with your eyes, lighting, viewing distance, and how you focus.</p>
           <button className="dialog-done" onClick={() => infoDialog.current?.close()}>Back to simulation</button>
         </div>

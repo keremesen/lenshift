@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from "react";
-import { clamp, dialPoint, snap } from "./optical-math";
+import { clamp, snap } from "./optical-math";
 
 type AudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext };
 
@@ -129,7 +129,7 @@ export function OpticalDial({ value, max, step, label, negative = false, axis = 
       if (feedback) {
         playDetent(soundEnabled, next / max, next === 0 || next === max);
         if ("vibrate" in navigator && next % (step * 4) === 0) navigator.vibrate(4);
-        pulse.current?.animate([
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) pulse.current?.animate([
           { opacity: .9, transform: "scale(.96) rotate(-8deg)", filter: "hue-rotate(0deg)" },
           { opacity: 0, transform: "scale(1.18) rotate(14deg)", filter: "hue-rotate(48deg)" },
         ], { duration: next % (step * 4) === 0 ? 520 : 330, easing: "cubic-bezier(.16,1,.3,1)" });
@@ -203,62 +203,51 @@ export function OpticalDial({ value, max, step, label, negative = false, axis = 
     if (event.key === "Enter") { event.preventDefault(); setDraft(String(negative ? -value : value)); setEditing(true); }
   };
   const display = axis ? String(Math.round(value)).padStart(3, "0") : `${value === 0 ? "" : negative ? "−" : "+"}${value.toFixed(2)}`;
-  const angle = axis ? value : -144 + value / max * 288;
-  const dot = dialPoint(angle, 122);
-  const tickCount = axis ? 72 : 64;
+  const tickCount = Math.round(max / step);
 
-  return <div className={`optical-dial ${axis ? "axis-dial" : "power-dial"} ${active ? "is-turning" : ""} ${settling ? "is-settling" : ""} ${direction < 0 ? "turning-left" : direction > 0 ? "turning-right" : ""}`} style={{ "--dial-angle": `${angle}deg`, "--power": value / max } as CSSProperties}>
-    <div ref={slider} className="dial-surface" role="slider" tabIndex={0} aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-valuetext={`${axis ? value : display} ${axis ? "degrees" : "diopters"}`} aria-describedby={`${id}-hint`} onKeyDown={keyboard} onPointerDown={start} onPointerMove={move} onPointerUp={e => release(e)} onPointerCancel={e => release(e, true)} onLostPointerCapture={e => { if (motion.current.dragging) release(e, true); }}>
-      <div className="dial-halo" />
-      <div ref={pulse} className="dial-detent-pulse" />
-      <div className="dial-caustic" />
-      <div className="dial-machining" />
-      <svg className="dial-scale" viewBox="0 0 280 280" fill="none" aria-hidden="true">
-        <circle cx="140" cy="140" r="107" className="dial-inner-border" />
-        {Array.from({ length: tickCount + (axis ? 0 : 1) }, (_, i) => {
-          const a = axis ? i * 5 : -144 + i / tickCount * 288;
-          const major = i % (axis ? 6 : 8) === 0;
-          const p1 = dialPoint(a, major ? 112 : 117), p2 = dialPoint(a, 123);
-          return <line key={i} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} className={`${major ? "major" : ""} ${!axis && i / tickCount <= value / max ? "passed" : ""}`} />;
-        })}
-        {!axis && <><circle cx={dot.x} cy={dot.y} r="5" className="dial-position-glow" /><circle cx={dot.x} cy={dot.y} r="2.5" className="dial-position" /><text x="59" y="260">0.00</text><text x="215" y="260">{negative ? "−" : "+"}{max.toFixed(2)}</text></>}
-        {axis && <g className="axis-needle" style={{ transform: `rotate(${value}deg)` }}><path d="M44 140h192" /><path d="m44 140 8-4v8Zm192 0-8-4v8Z" /><ellipse cx="140" cy="140" rx="84" ry="19" /><ellipse cx="140" cy="140" rx="65" ry="10" /></g>}
-      </svg>
+  return <div className={`optical-dial ${axis ? "axis-dial" : "power-dial"} ${active ? "is-turning" : ""} ${settling ? "is-settling" : ""} ${direction < 0 ? "turning-left" : direction > 0 ? "turning-right" : ""}`} style={{ "--power": value / max } as CSSProperties}>
+    <div className="control-heading"><span>{axis ? "Axis" : label === "Cylinder power" ? "Cylinder power" : "Lens power"}</span><span className="control-unit">{axis ? "DIRECTION" : "DIOPTERS"}</span></div>
+    <div ref={slider} className="dial-surface" role="slider" tabIndex={0} aria-label={label} aria-orientation="horizontal" aria-valuemin={0} aria-valuemax={max} aria-valuenow={value} aria-valuetext={`${axis ? value : display} ${axis ? "degrees" : "diopters"}`} aria-describedby={`${id}-hint`} onKeyDown={keyboard} onPointerDown={start} onPointerMove={move} onPointerUp={e => release(e)} onPointerCancel={e => release(e, true)} onLostPointerCapture={e => { if (motion.current.dragging) release(e, true); }}>
       <div className="dial-face" aria-hidden="true">
-        <span className="dial-caption">{axis ? "LIGHT DIRECTION" : "LENS POWER"}</span>
+        {axis && <svg className="axis-compass" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="17" /><path d="M3 20h34M20 3v34" /><g style={{ transform: `rotate(${value}deg)` }}><path d="M7 20h26m-4-4 4 4-4 4" /></g></svg>}
         <div className="dial-reading"><RollingNumber value={display} /><span className="dial-unit">{axis ? "°" : "D"}</span></div>
-        <span className="dial-subtitle">{active ? "FIND YOUR FOCUS" : axis ? "ROTATE THE LIGHT" : "TURN TO FEEL THE DIFFERENCE"}</span>
-        <span className="scrub-cue"><i>←</i><span>{active ? direction < 0 ? "LESS" : direction > 0 ? "MORE" : "SLIDE" : "SLIDE TO ADJUST"}</span><i>→</i></span>
+      </div>
+      <div className="glass-ruler" aria-hidden="true">
+        <div className="ruler-tape" style={{ transform: `translateX(${-value / step * 12}px)` }}>
+          {Array.from({ length: tickCount + 1 }, (_, i) => <span key={i} className={`ruler-mark ${i % (axis ? 15 : 4) === 0 ? "major" : ""} ${i * step <= value ? "passed" : ""}`} style={{ left: i * 12 }}><i />{i % (axis ? 30 : 4) === 0 && <span>{axis ? i : `${i === 0 ? "" : negative ? "−" : "+"}${i * step}`}</span>}</span>)}
+        </div>
+        <div ref={pulse} className="dial-detent-pulse" />
+        <span className="ruler-lens"><i /></span>
       </div>
     </div>
     <div className="dial-precision">
       <button aria-label={`Decrease ${label.toLowerCase()}`} disabled={value <= 0} onClick={() => setDirect(value - step)}>−</button>
-      <button ref={editButton} className="exact-value" onClick={() => { settle(); setDraft(String(negative ? -value : value)); setEditing(!editing); }} aria-label={`Enter exact ${label.toLowerCase()}`} aria-expanded={editing} aria-controls={`${id}-exact`}>{axis ? "1°" : "0.25 D"}<span> / step</span><svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 11 1-3 7-7 3 3-7 7-4 1Zm6-8 3 3" fill="none" stroke="currentColor" /></svg></button>
+      <button ref={editButton} className="exact-value" onClick={() => { settle(); setDraft(String(negative ? -value : value)); setEditing(!editing); }} aria-label={`Enter exact ${label.toLowerCase()}`} aria-expanded={editing} aria-controls={`${id}-exact`}>{axis ? "1°" : "0.25 D"}<span> steps</span><svg width="10" height="10" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 11 1-3 7-7 3 3-7 7-4 1Zm6-8 3 3" fill="none" stroke="currentColor" /></svg></button>
       <button aria-label={`Increase ${label.toLowerCase()}`} disabled={value >= max} onClick={() => setDirect(value + step)}>+</button>
     </div>
-    <span className="sr-only" id={`${id}-hint`}>Drag around the ring or drag across the number. Use arrow keys to adjust, Shift for fine dragging, Home or End for limits. Press Enter to type a value.</span>
-    {editing && <form id={`${id}-exact`} className="exact-entry" onSubmit={event => { event.preventDefault(); if (draft.trim() && Number.isFinite(Number(draft))) { setDirect(Math.abs(Number(draft))); setEditing(false); editButton.current?.focus(); } }}>
+    <span className="sr-only" id={`${id}-hint`}>Drag left or right across the ruler or number. Use arrow keys to adjust, Shift for fine dragging, Home or End for limits. Press Enter to type a value.</span>
+    {editing && <form id={`${id}-exact`} className="exact-entry" onPointerDown={event => event.stopPropagation()} onSubmit={event => { event.preventDefault(); if (draft.trim() && Number.isFinite(Number(draft))) { setDirect(Math.abs(Number(draft))); setEditing(false); editButton.current?.focus(); } }}>
       <label htmlFor={`${id}-input`}>Exact {axis ? "axis" : "power"} · {axis ? "degrees" : "diopters"}</label>
-      <div><input ref={input} id={`${id}-input`} type="number" inputMode="decimal" step={step} min={negative ? -max : 0} max={negative ? 0 : max} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Escape") { e.preventDefault(); setEditing(false); editButton.current?.focus(); } }} required /><button type="submit">Set</button><button type="button" aria-label="Cancel exact value" onClick={() => { setEditing(false); editButton.current?.focus(); }}>×</button></div>
+      <div><input ref={input} id={`${id}-input`} type="number" inputMode={negative ? "text" : "decimal"} step={step} min={negative ? -max : 0} max={negative ? 0 : max} value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => { if (e.key === "Escape") { e.preventDefault(); setEditing(false); editButton.current?.focus(); } }} required /><button type="submit">Set</button><button type="button" aria-label="Cancel exact value" onClick={() => { setEditing(false); editButton.current?.focus(); }}>×</button></div>
     </form>}
   </div>;
 }
 
 export type VisionMode = "Myopia" | "Hyperopia" | "Astigmatism";
 const journeys: Record<VisionMode, { title: string; description: string; values: number[]; labels: string[] }> = {
-  Myopia: { title: "Let the distance\ndisappear.", description: "Turn the lens. Watch the far end of the street dissolve into colour.", values: [0, 1.5, 3, 6], labels: ["Clear", "A little", "A world away", "Abstract"] },
-  Hyperopia: { title: "So close.\nSo different.", description: "Bring your attention to the café menu. Let the little details slip away.", values: [0, 1, 2.5, 5], labels: ["Clear", "A little", "Soft edges", "Abstract"] },
-  Astigmatism: { title: "Give light\na new direction.", description: "Stretch the highlights. Rotate the axis and watch their direction change.", values: [0, .75, 1.5, 3.5], labels: ["Clear", "A little", "Light trails", "Afterglow"] },
+  Myopia: { title: "A different\npoint of view.", description: "Explore how distance changes with your lens power.", values: [0, 1.5, 3, 6], labels: ["Clear", "Subtle", "Soft", "Abstract"] },
+  Hyperopia: { title: "So close.\nSo different.", description: "Bring your attention to the café menu. Let the little details slip away.", values: [0, 1, 2.5, 5], labels: ["Clear", "Subtle", "Soft", "Abstract"] },
+  Astigmatism: { title: "Give light\na new direction.", description: "Stretch the highlights. Rotate the axis and watch their direction change.", values: [0, .75, 1.5, 3.5], labels: ["Clear", "Subtle", "Trails", "Afterglow"] },
 };
 
 export function PerceptionStory({ mode, value, soundEnabled = true, onChange }: { mode: VisionMode; value: number; soundEnabled?: boolean; onChange: (value: number) => void }) {
   const story = journeys[mode];
   return <div className="perception-story" key={mode}>
-    <span className="lab-kicker">{mode === "Myopia" ? "01 / DISTANCE" : mode === "Hyperopia" ? "02 / PROXIMITY" : "03 / DIRECTION"}</span>
+    <span className="lab-kicker">{mode === "Myopia" ? "DISTANCE" : mode === "Hyperopia" ? "UP CLOSE" : "LIGHT & DIRECTION"}</span>
     <h2>{story.title.split("\n").map((line, i) => <span key={line} style={{ "--line-index": i } as CSSProperties}>{line}</span>)}</h2>
     <p>{story.description}</p>
     <div className="perception-stops" role="group" aria-label="Try a lens power">
-      {story.values.map((stop, i) => <button key={stop} className={value === stop ? "selected" : ""} onClick={() => { primeDetentAudio(soundEnabled); playDetent(soundEnabled, i / (story.values.length - 1), true); onChange(stop); }} aria-pressed={value === stop} aria-label={`${story.labels[i]}, ${stop} diopters`}><span className="stop-dot" /><span>{story.labels[i]}</span></button>)}
+      {story.values.map((stop, i) => <button key={stop} className={value === stop ? "selected" : ""} onClick={() => { primeDetentAudio(soundEnabled); playDetent(soundEnabled, i / (story.values.length - 1), true); onChange(stop); }} aria-pressed={value === stop} aria-label={`${story.labels[i]}, ${mode === "Hyperopia" ? stop : -stop} diopters`}><span className="stop-dot" /><span>{story.labels[i]}</span><span className="stop-value">{stop === 0 ? "0" : `${mode === "Hyperopia" ? "+" : "−"}${stop}`}<small>D</small></span></button>)}
     </div>
   </div>;
 }
